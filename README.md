@@ -1,6 +1,6 @@
 # Maids System (Cleaning Service Management)
 
-A simple but complete cleaning service management system built with PHP, MySQL, HTML, CSS, and JS. It allows clients to book cleaners, cleaners to manage their tasks, and admins to monitor the system.
+A simple cleaning service management system built with PHP, MySQL, HTML, CSS, and JS. It allows clients to book cleaners, cleaners to manage their tasks, and admins to monitor the system.
 
 ## Features
 - User authentication (Clients, Cleaners, Admin)
