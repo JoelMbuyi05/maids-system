@@ -1,0 +1,318 @@
+/* Auth Pages Styling - Base & Modern, Clean Look */
+
+.auth-body {
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
+    background: linear-gradient(135deg, #f0f2f5 0%, #e4e6eb 100%); /* Light, clean background */
+}
+
+/* Centering and Container */
+.auth-section-centered {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    box-sizing: border-box; /* Ensure padding doesn't cause overflow */
+}
+
+.auth-container-centered {
+    width: 100%;
+    max-width: 500px; /* Increased max-width for better spacing */
+    animation: fadeIn 0.6s ease-out; /* Subtle animation */
+}
+
+/* Brand/Logo Section */
+.auth-brand-compact {
+    text-align: center;
+    margin-bottom: 25px; /* More space below brand */
+}
+
+.logo-icon-small {
+    display: inline-block;
+    margin-bottom: 8px; /* Space between icon and title */
+}
+
+.brand-title-small {
+    font-size: 2.8rem; /* Slightly larger title */
+    color: #2c5aa0;
+    margin: 0;
+    font-weight: 700;
+}
+
+.brand-subtitle-small {
+    font-size: 1.05rem; /* Improved readability */
+    color: #606770;
+    margin: 5px 0 20px 0; /* More space above the card */
+}
+
+/* Card Styling */
+.auth-card-compact {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); /* Slightly more prominent shadow */
+    padding: 30px; /* More generous padding inside the card */
+    animation: slideUp 0.5s ease-out; /* Subtle animation */
+}
+
+/* Form Styling */
+.auth-form-compact {
+    display: flex;
+    flex-direction: column;
+    gap: 15px; /* Increased gap between form rows */
+}
+
+.form-row {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Specific styling for the split password row */
+.form-row-split {
+    display: flex;
+    gap: 15px; /* Gap between password fields */
+}
+
+.form-row-split input {
+    flex: 1; /* Ensures both inputs take equal available space */
+    min-width: 0; /* Prevents overflow in flex container */
+}
+
+.auth-form-compact input,
+.auth-form-compact select,
+.auth-form-compact textarea {
+    padding: 14px 18px; /* More padding for inputs */
+    border: 1px solid #cdd0d4; /* Slightly softer border */
+    border-radius: 8px; /* Slightly larger border-radius */
+    font-size: 1rem;
+    transition: all 0.2s ease; /* Smooth transitions */
+    font-family: inherit;
+    background: #fdfdfd; /* Very light off-white background */
+    color: #333;
+}
+
+.auth-form-compact input::placeholder,
+.auth-form-compact textarea::placeholder {
+    color: #8a8a8a;
+}
+
+.auth-form-compact select {
+    appearance: none; /* Remove default select arrow */
+    background-image: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="%23606770"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>');
+    background-repeat: no-repeat;
+    background-position: right 15px center;
+    background-size: 12px;
+    padding-right: 40px; /* Space for custom arrow */
+}
+
+
+.auth-form-compact input:focus,
+.auth-form-compact select:focus,
+.auth-form-compact textarea:focus {
+    outline: none;
+    border-color: #2c5aa0;
+    background: white;
+    box-shadow: 0 0 0 3px rgba(44, 90, 160, 0.15); /* More visible focus ring */
+}
+
+.auth-form-compact textarea {
+    resize: vertical;
+    min-height: 80px; /* Taller textarea */
+}
+
+/* Checkbox Label */
+.checkbox-label-compact {
+    display: flex;
+    align-items: center;
+    gap: 10px; /* More space around checkbox */
+    cursor: pointer;
+    font-size: 0.95rem;
+    color: #606770;
+    margin-top: 10px; /* Space above checkbox */
+}
+
+.checkbox-label-compact input[type="checkbox"] {
+    min-width: 18px; /* Ensures checkbox is not squished */
+    min-height: 18px; /* Ensures checkbox is not squished */
+    cursor: pointer;
+    accent-color: #2c5aa0; /* Style checkbox accent color */
+}
+
+.checkbox-label-compact a {
+    color: #2c5aa0;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.checkbox-label-compact a:hover {
+    text-decoration: underline;
+}
+
+/* Submit Button */
+.btn-submit-compact {
+    padding: 14px 20px; /* Larger padding for button */
+    background: #2c5aa0;
+    color: white;
+    border: none;
+    border-radius: 8px; /* Larger border-radius */
+    font-size: 1.1rem; /* Larger font size */
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-top: 15px; /* More space above button */
+    width: 100%; /* Ensure button takes full width */
+}
+
+.btn-submit-compact:hover {
+    background: #1e4079;
+    box-shadow: 0 4px 15px rgba(44, 90, 160, 0.2);
+}
+
+.btn-submit-compact:active {
+    transform: translateY(1px); /* More subtle active effect */
+}
+
+/* Divider */
+.divider-compact {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    margin: 25px 0; /* More vertical space for divider */
+}
+
+.divider-compact::before,
+.divider-compact::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid #dadde1;
+}
+
+.divider-compact span {
+    padding: 0 15px; /* More padding around "or" */
+    color: #606770;
+    font-size: 0.9rem;
+}
+
+/* Create Account Button (for login page) */
+.btn-create-account-compact {
+    display: block;
+    width: 100%;
+    text-align: center;
+    padding: 14px 0; /* Consistent padding with submit button */
+    background: #42b72a;
+    color: white;
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 1.1rem; /* Consistent font size */
+    transition: all 0.2s ease;
+}
+
+.btn-create-account-compact:hover {
+    background: #36a420;
+    box-shadow: 0 4px 15px rgba(66, 183, 42, 0.2);
+}
+
+/* Auth Footer Text (for register page) */
+.auth-footer-text {
+    margin-top: 20px; /* More space above footer text */
+    font-size: 0.95rem;
+    color: #606770;
+}
+
+.auth-footer-text .auth-link {
+    color: #2c5aa0;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.auth-footer-text .auth-link:hover {
+    text-decoration: underline;
+}
+
+/* General Link Styles */
+.forgot-link {
+    color: #2c5aa0;
+    text-decoration: none;
+    font-size: 0.95rem; /* Consistent font size */
+    font-weight: 500;
+    transition: color 0.2s;
+    display: block; /* Ensure it takes its own line if needed */
+    margin-top: 5px; /* Small space below password for login page */
+}
+
+.forgot-link:hover {
+    text-decoration: underline;
+}
+
+.text-center {
+    text-align: center;
+}
+
+/* Error & Success Messages (Reused and slightly updated) */
+.error-message {
+    padding: 12px;
+    background: #fff3f3; /* Lighter error background */
+    border: 1px solid #ffaaaa; /* Lighter error border */
+    border-radius: 6px;
+    color: #cc0000; /* Stronger error text color */
+    font-size: 0.9rem;
+    text-align: center;
+    margin-bottom: 10px; /* Space below error message */
+}
+
+.success-message {
+    padding: 12px;
+    background: #f0fff0; /* Lighter success background */
+    border: 1px solid #aaffaa; /* Lighter success border */
+    border-radius: 6px;
+    color: #008800; /* Stronger success text color */
+    font-size: 0.9rem;
+    text-align: center;
+    margin-bottom: 10px; /* Space below success message */
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); } /* More subtle initial fade */
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); } /* More subtle initial slide */
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Responsive Adjustments */
+@media (max-width: 550px) {
+    .auth-container-centered {
+        max-width: 100%;
+        margin: 0 15px; /* Added horizontal margin on smaller screens */
+    }
+
+    .auth-card-compact {
+        padding: 25px 20px; /* Slightly less padding on smaller screens */
+    }
+
+    .brand-title-small {
+        font-size: 2.2rem;
+    }
+
+    .auth-form-compact input,
+    .auth-form-compact select,
+    .auth-form-compact textarea {
+        padding: 12px 15px; /* Adjust input padding */
+        font-size: 0.95rem;
+    }
+
+    .form-row-split {
+        flex-direction: column; /* Stack password fields vertically on small screens */
+        gap: 12px;
+    }
+
+    .btn-submit-compact, .btn-create-account-compact {
+        font-size: 1rem;
+        padding: 12px 15px;
+    }
+}

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In - CleanCare</title>
+    <link rel="stylesheet" href="../css/auth.css">
+</head>
+<body class="auth-body">
+    <!-- Login Section -->
+    <section class="auth-section-centered">
+        <div class="auth-container-centered">
+            <!-- Logo/Brand -->
+            <div class="auth-brand-compact">
+                <div class="logo-icon-small">
+                    <svg viewBox="0 0 60 60" width="60" height="60">
+                        <circle cx="30" cy="30" r="28" fill="#2c5aa0"/>
+                        <path d="M 20 32 L 30 22 L 40 32 L 40 42 L 20 42 Z" fill="white"/>
+                        <path d="M 18 32 L 30 20 L 42 32" stroke="white" stroke-width="2" fill="none" stroke-linecap="round"/>
+                        <rect x="27" y="36" width="6" height="6" fill="#2c5aa0"/>
+                        <circle cx="36" cy="26" r="1.5" fill="#FFC107"/>
+                        <path d="M 36 23 L 36 29 M 33 26 L 39 26" stroke="#FFC107" stroke-width="1.5" stroke-linecap="round"/>
+                        <circle cx="24" cy="28" r="1" fill="#FFC107"/>
+                        <path d="M 24 26 L 24 30 M 22 28 L 26 28" stroke="#FFC107" stroke-width="1" stroke-linecap="round"/>
+                    </svg>
+                </div>
+                <h1 class="brand-title-small">CleanCare</h1>
+                <p class="brand-subtitle-small">Sign in to continue</p>
+            </div>
+
+            <div class="auth-card-compact">
+                <form id="loginForm" class="auth-form-compact">
+                    <div class="form-row">
+                        <input type="email" id="email" name="email" placeholder="Email address" required>
+                    </div>
+
+                    <div class="form-row">
+                        <input type="password" id="password" name="password" placeholder="Password" required>
+                    </div>
+
+                    <div id="errorMessage" class="error-message" style="display: none;"></div>
+
+                    <button type="submit" class="btn-submit-compact">Sign In</button>
+
+                    <div class="text-center" style="margin-top: 12px;">
+                        <a href="#" class="forgot-link">Forgot Password?</a>
+                    </div>
+                </form>
+
+                <div class="divider-compact"><span>or</span></div>
+
+                <div class="text-center">
+                    <a href="register.html" class="btn-create-account-compact">Create New Account</a>
+                </div>
+
+                <!--<div class="demo-credentials-compact">
+                    <p><strong>Demo:</strong> admin@cleancare.com | client@cleancare.com | cleaner@cleancare.com</p>
+                    <p><strong>Password:</strong> password</p>
+                </div>-->
+            </div>
+        </div>
+    </section>
+
+    <script src="../js/login.js"></script>
+</body>
+</html>

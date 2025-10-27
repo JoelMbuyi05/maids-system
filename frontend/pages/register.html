@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sign Up - CleanCare</title>
+  <link rel="stylesheet" href="../css/auth.css" />
+</head>
+<body class="auth-body">
+  <!-- Register Section -->
+  <section class="auth-section-centered">
+    <div class="auth-container-centered">
+
+      <!-- Brand -->
+      <div class="auth-brand-compact">
+        <div class="logo-icon-small">
+          <svg viewBox="0 0 60 60" width="60" height="60">
+            <circle cx="30" cy="30" r="28" fill="#2c5aa0"/>
+            <path d="M 20 32 L 30 22 L 40 32 L 40 42 L 20 42 Z" fill="white"/>
+            <path d="M 18 32 L 30 20 L 42 32" stroke="white" stroke-width="2" fill="none" stroke-linecap="round"/>
+            <rect x="27" y="36" width="6" height="6" fill="#2c5aa0"/>
+            <circle cx="36" cy="26" r="1.5" fill="#FFC107"/>
+            <path d="M 36 23 L 36 29 M 33 26 L 39 26" stroke="#FFC107" stroke-width="1.5" stroke-linecap="round"/>
+            <circle cx="24" cy="28" r="1" fill="#FFC107"/>
+            <path d="M 24 26 L 24 30 M 22 28 L 26 28" stroke="#FFC107" stroke-width="1" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <h1 class="brand-title-small">CleanCare</h1>
+        <p class="brand-subtitle-small">Create your account</p>
+      </div>
+
+      <!-- Form Card -->
+      <div class="auth-card-compact">
+        <form id="registerForm" class="auth-form-compact">
+
+          <div class="form-row">
+            <input type="text" id="fullName" name="fullName" placeholder="Full name" required />
+          </div>
+
+          <div class="form-row">
+            <input type="email" id="email" name="email" placeholder="Email address" required />
+          </div>
+
+          <div class="form-row">
+            <input type="tel" id="phone" name="phone" placeholder="Phone number (e.g., 0712345678)" required />
+          </div>
+
+          <div class="form-row">
+            <textarea id="address" name="address" rows="3" placeholder="Your address" required></textarea>
+          </div>
+
+          <div class="form-row">
+            <select id="userType" name="userType" required>
+              <option value="">-- Select role --</option>
+              <option value="client">Book Cleaning Services (Client)</option>
+              <option value="cleaner">Work as a Cleaner (Cleaner)</option>
+            </select>
+          </div>
+
+          <div class="form-row-split">
+            <input type="password" id="password" name="password" placeholder="Password" minlength="6" required />
+            <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Confirm password" required />
+          </div>
+
+          <label class="checkbox-label-compact">
+            <input type="checkbox" id="terms" name="terms" required />
+            <span>I agree to the <a href="#">Terms & Conditions</a></span>
+          </label>
+
+          <div id="errorMessage" class="error-message" style="display:none;"></div>
+          <div id="successMessage" class="success-message" style="display:none;"></div>
+
+          <button type="submit" class="btn-submit-compact">Create Account</button>
+
+          <div class="divider-compact"><span>or</span></div>
+
+          <!-- Fixed footer text -->
+          <div class="text-center auth-footer-text">
+            <p>Already have an account? 
+              <a href="login.html" class="auth-link">Sign In</a>
+            </p>
+          </div>
+        </form>
+      </div>
+
+    </div>
+  </section>
+
+  <script src="../js/register.js"></script>
+</body>
+</html>
