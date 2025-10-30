@@ -1,10 +1,25 @@
+<?php
+// Start the session for checking login status
+session_start();
+
+// Determine if the user is logged in
+$is_logged_in = isset($_SESSION['user_id']);
+$user_name = $is_logged_in ? htmlspecialchars($_SESSION['user_name']) : '';
+$user_role = $is_logged_in ? htmlspecialchars($_SESSION['user_role']) : '';
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CleanCare - Professional Maid Services</title>
-    <link rel="stylesheet" href="css/style.css">
+    <!-- Assuming your style.css is in a 'css' folder relative to this file's location -->
+    <link rel="stylesheet" href="frontend/css/style.css"> 
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Apply Inter font */
+        body { font-family: 'Inter', sans-serif; }
+    </style>
 </head>
 <body>
     <!-- Navigation Bar -->
@@ -45,10 +60,23 @@
                 <li><a href="#agents">Agents</a></li>
                 <li><a href="#reviews">Reviews</a></li>
                 <li><a href="#contact">Contact</a></li>
+                <?php if ($is_logged_in): ?>
+                    <!-- Show Dashboard link if logged in -->
+                    <li><a href="dashboard.php">Dashboard</a></li>
+                <?php endif; ?>
             </ul>
             <div class="nav-buttons">
-                <a href="pages/login.html" class="btn-outline">Sign In</a>
-                <a href="pages/register.html" class="btn-primary">Sign Up</a>
+                <?php if ($is_logged_in): ?>
+                    <!-- Show welcome message and logout button if logged in -->
+                    <span class="text-sm font-semibold text-gray-700 mr-4 hidden md:inline">
+                        Welcome, <?= $user_name ?> (<?= ucfirst($user_role) ?>)
+                    </span>
+                    <a href="logout.php" class="btn-primary">Log Out</a>
+                <?php else: ?>
+                    <!-- Show Sign In/Up buttons if not logged in -->
+                    <a href="login.php" class="btn-outline">Sign In</a>
+                    <a href="register.php" class="btn-primary">Sign Up</a>
+                <?php endif; ?>
             </div>
         </div>
     </nav>
@@ -61,7 +89,9 @@
                 <p class="hero-subtitle">Connecting you with trusted, professional household services</p>
                 <p class="hero-description">We provide reliable, skilled maids to help busy families maintain a clean and comfortable home</p>
                 <div class="hero-actions">
-                    <a href="pages/register.html" class="btn-large btn-primary">Get Started</a>
+                    <a href="<?= $is_logged_in ? 'dashboard.php' : 'register.php' ?>" class="btn-large btn-primary">
+                        <?= $is_logged_in ? 'Go to Dashboard' : 'Get Started' ?>
+                    </a>
                 </div>
             </div>
         </div>
@@ -188,7 +218,7 @@
                 </div>
             </div>
             <div class="text-center">
-                <a href="pages/services.html" class="btn-primary">View All Services</a>
+                <a href="services.php" class="btn-primary">View All Services</a>
             </div>
         </div>
     </section>
@@ -207,7 +237,7 @@
                     <div class="agent-rating">⭐⭐⭐⭐⭐ 4.9</div>
                     <p class="agent-experience">5 years experience</p>
                     <p class="agent-specialty">Specializes in deep cleaning</p>
-                    <a href="pages/register.html" class="btn-small">Book Now</a>
+                    <a href="<?= $is_logged_in ? 'booking.php' : 'register.php' ?>" class="btn-small">Book Now</a>
                 </div>
                 <div class="agent-card">
                     <div class="agent-photo">
@@ -217,7 +247,7 @@
                     <div class="agent-rating">⭐⭐⭐⭐⭐ 4.8</div>
                     <p class="agent-experience">7 years experience</p>
                     <p class="agent-specialty">Expert in office cleaning</p>
-                    <a href="pages/register.html" class="btn-small">Book Now</a>
+                    <a href="<?= $is_logged_in ? 'booking.php' : 'register.php' ?>" class="btn-small">Book Now</a>
                 </div>
                 <div class="agent-card">
                     <div class="agent-photo">
@@ -227,7 +257,7 @@
                     <div class="agent-rating">⭐⭐⭐⭐⭐ 5.0</div>
                     <p class="agent-experience">3 years experience</p>
                     <p class="agent-specialty">Regular home maintenance</p>
-                    <a href="pages/register.html" class="btn-small">Book Now</a>
+                    <a href="<?= $is_logged_in ? 'booking.php' : 'register.php' ?>" class="btn-small">Book Now</a>
                 </div>
             </div>
         </div>
@@ -262,7 +292,9 @@
         <div class="container">
             <h2>Ready to Experience CleanCare?</h2>
             <p>Join hundreds of satisfied families today</p>
-            <a href="pages/register.html" class="btn-large btn-white">Get Started Now</a>
+            <a href="<?= $is_logged_in ? 'dashboard.php' : 'register.php' ?>" class="btn-large btn-white">
+                <?= $is_logged_in ? 'Manage Your Bookings' : 'Get Started Now' ?>
+            </a>
         </div>
     </section>
 
