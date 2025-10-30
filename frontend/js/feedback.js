@@ -1,83 +1,118 @@
-document.addEventListener('DOMContentLoaded', () => {
-    const form = document.getElementById('registerForm');
-    const errorMessageDiv = document.getElementById('errorMessage');
-    const successMessageDiv = document.getElementById('successMessage');
-    const passwordInput = document.getElementById('password');
-    const confirmPasswordInput = document.getElementById('confirmPassword');
+// feedback.js - Feedback and rating functionality
 
-    // Helper function to clear and display messages
-    const displayMessage = (element, message, isSuccess = false) => {
-        errorMessageDiv.style.display = 'none';
-        successMessageDiv.style.display = 'none';
-        
-        element.textContent = message;
-        element.style.display = 'block';
-        element.focus(); // Good for accessibility
-    };
-
-    form.addEventListener('submit', async (e) => {
-        e.preventDefault(); // Stop the default form submission
-
-        // Clear previous messages
-        /*displayMessage(errorMessageDiv, '', false);
-        displayMessage(successMessageDiv, '', true);*/
-
-        errorMessageDiv.style.display = 'none';
-        successMessageDiv.style.display = 'none';
-
-        // --- Frontend Validation Check ---
-        if (passwordInput.value !== confirmPasswordInput.value) {
-            displayMessage(errorMessageDiv, 'Passwords do not match. Please try again.');
-            return;
-        }
-        if (passwordInput.value.length < 6) {
-            displayMessage(errorMessageDiv, 'Password must be at least 6 characters long.');
-            return;
-        }
-
-        // --- Data Submission ---
-        
-        // 1. Collect form data
-        //const formData = new FormData(form);
-
-        const submitButton = form.querySelector('button[type="submit"]');
-
-        try {
-            // Disable button and change text while processing
-            submitButton.disabled = true;
-            submitButton.textContent = 'Processing...';
-            
-            // 2. Send data to the PHP backend
-            // NOTE: The path is relative to the HTML file (register.html)
-            const response = await fetch("../../backend/register_process.php", {
-                method: 'POST',
-                body: formData
-            });
-
-            // 3. Handle the JSON response from PHP
-            const result = await response.json();
-
-            if (result.success) {
-                displayMessage(successMessageDiv, result.message, true);
-                form.reset(); // Clear the form on successful registration
-                
-                // Optional: Redirect the user to the login page after a short delay
-                setTimeout(() => {
-                    window.location.href = 'login.html';
-                }, 2000); 
-
-            } else {
-                // Display error message from the PHP script
-                displayMessage(errorMessageDiv, result.message);
-            }
-
-        } catch (error) {
-            console.error('Registration Error:', error);
-            displayMessage(errorMessageDiv, 'A network error occurred. Please check your connection.');
-        } finally {
-            // Re-enable the button regardless of success/failure
-            submitButton.disabled = false;
-            submitButton.textContent = 'Create Account';
-        }
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize star rating
+    const starRatings = document.querySelectorAll('.star-rating');
+    starRatings.forEach(initStarRating);
+    
+    // Handle feedback form submission
+    const feedbackForm = document.getElementById('feedbackForm');
+    if (feedbackForm) {
+        feedbackForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            submitFeedback();
+        });
+    }
+    
+    // Handle feedback buttons
+    const feedbackButtons = document.querySelectorAll('.btn-leave-feedback');
+    feedbackButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const bookingId = this.dataset.bookingId;
+            showFeedbackModal(bookingId);
+        });
     });
 });
+
+// Initialize star rating component
+function initStarRating(container) {
+    const stars = container.querySelectorAll('.star');
+    const ratingInput = container.querySelector('input[name="rating"]');
+    
+    stars.forEach((star, index) => {
+        star.addEventListener('click', function() {
+            const rating = index + 1;
+            ratingInput.value = rating;
+            updateStars(stars, rating);
+        });
+        
+        star.addEventListener('mouseenter', function() {
+            const rating = index + 1;
+            updateStars(stars, rating);
+        });
+    });
+    
+    container.addEventListener('mouseleave', function() {
+        const currentRating = parseInt(ratingInput.value) || 0;
+        updateStars(stars, currentRating);
+    });
+}
+
+// Update star display
+function updateStars(stars, rating) {
+    stars.forEach((star, index) => {
+        if (index < rating) {
+            star.classList.add('active');
+            star.textContent = '★';
+        } else {
+            star.classList.remove('active');
+            star.textContent = '☆';
+        }
+    });
+}
+
+// Show feedback modal
+function showFeedbackModal(bookingId) {
+    const modal = document.getElementById('feedbackModal');
+    if (modal) {
+        document.getElementById('feedback_booking_id').value = bookingId;
+        modal.style.display = 'block';
+    } else {
+        // If no modal, redirect to feedback page
+        window.location.href = `feedback.php?booking_id=${bookingId}`;
+    }
+}
+
+// Submit feedback
+function submitFeedback() {
+    const form = document.getElementById('feedbackForm');
+    const formData = new FormData(form);
+    formData.append('action', 'submit');
+    
+    const submitBtn = form.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Submitting...';
+    
+    fetch('../backend/feedback_process.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showSuccessMessage(data.message);
+            form.reset();
+            const modal = document.getElementById('feedbackModal');
+            if (modal) modal.style.display = 'none';
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
+        } else {
+            showErrorMessage(data.message);
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Submit Feedback';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showErrorMessage('An error occurred. Please try again.');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Submit Feedback';
+    });
+}
+
+// Close modal
+function closeFeedbackModal() {
+    const modal = document.getElementById('feedbackModal');
+    if (modal) modal.style.display = 'none';
+}

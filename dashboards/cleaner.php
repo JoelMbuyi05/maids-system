@@ -44,6 +44,7 @@ try {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cleaner Dashboard - CleanCare</title>
     <link rel="stylesheet" href="../frontend/css/style.css">
+    <link rel="stylesheet" href="../frontend/css/dashboard.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
@@ -113,9 +114,9 @@ try {
             <div style="background: white; padding: 30px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); margin-bottom: 40px;">
                 <h3 style="color: #2c5aa0; margin-bottom: 20px;">Quick Actions</h3>
                 <div style="display: flex; gap: 15px; flex-wrap: wrap;">
-                    <a href="#available-jobs" class="btn-primary" style="display: inline-block;">🔍 View Available Jobs</a>
-                    <a href="#my-schedule" class="btn-outline">📅 My Schedule</a>
-                    <a href="#profile" class="btn-outline">👤 Edit Profile</a>
+                    <a href="#jobs" class="btn-primary" style="display: inline-block; text-decoration: none;">🔍 View My Jobs</a>
+                    <a href="../pages/schedule.php" class="btn-outline" style="display: inline-block; text-decoration: none;">📅 My Schedule</a>
+                    <a href="../pages/profile.php" class="btn-outline" style="display: inline-block; text-decoration: none;">👤 Edit Profile</a>
                 </div>
             </div>
 
@@ -125,7 +126,8 @@ try {
                 
                 <?php if (empty($bookings)): ?>
                     <div style="text-align: center; padding: 40px; color: #999;">
-                        <p style="font-size: 1.2rem; margin-bottom: 20px;">📭 No jobs assigned yet</p>
+                        <p style="font-size: 3rem; margin-bottom: 10px;">📭</p>
+                        <p style="font-size: 1.2rem; margin-bottom: 20px;">No jobs assigned yet</p>
                         <p>Check back soon for new booking requests!</p>
                     </div>
                 <?php else: ?>
@@ -175,20 +177,18 @@ try {
                                     <td style="padding: 12px; font-weight: 600;">R<?= number_format($booking['price'], 2) ?></td>
                                     <td style="padding: 12px; text-align: center;">
                                         <?php if ($booking['status'] === 'pending'): ?>
-                                            <button style="background: #28a745; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; margin: 2px;">
+                                            <button onclick="acceptBooking(<?= $booking['id'] ?>)" style="background: #28a745; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; margin: 2px;">
                                                 ✓ Accept
                                             </button>
-                                            <button style="background: #dc3545; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; margin: 2px;">
+                                            <button onclick="rejectBooking(<?= $booking['id'] ?>)" style="background: #dc3545; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; margin: 2px;">
                                                 ✗ Decline
                                             </button>
                                         <?php elseif ($booking['status'] === 'confirmed'): ?>
-                                            <button style="background: #17a2b8; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.85rem;">
+                                            <button onclick="completeBooking(<?= $booking['id'] ?>)" style="background: #17a2b8; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.85rem;">
                                                 ✓ Mark Complete
                                             </button>
                                         <?php else: ?>
-                                            <button style="background: #2c5aa0; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.85rem;">
-                                                View Details
-                                            </button>
+                                            <span style="color: #999; font-size: 0.85rem;">No actions</span>
                                         <?php endif; ?>
                                     </td>
                                 </tr>
@@ -209,5 +209,50 @@ try {
             </div>
         </div>
     </footer>
+
+    <script src="../frontend/js/main.js"></script>
+    <script src="../frontend/js/booking.js"></script>
+    <script>
+        function acceptBooking(bookingId) {
+            if (!confirm('Accept this booking?')) return;
+            
+            handleBookingAction('accept', bookingId);
+        }
+
+        function rejectBooking(bookingId) {
+            if (!confirm('Reject this booking? It will be available for other cleaners.')) return;
+            
+            handleBookingAction('reject', bookingId);
+        }
+
+        function completeBooking(bookingId) {
+            if (!confirm('Mark this job as complete?')) return;
+            
+            handleBookingAction('complete', bookingId);
+        }
+
+        function handleBookingAction(action, bookingId) {
+            const formData = new FormData();
+            formData.append('action', action);
+            formData.append('booking_id', bookingId);
+            
+            fetch('../backend/booking_process.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    location.reload();
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occured. Please try again.');
+            });
+    </script>
 </body>
 </html>

@@ -9,6 +9,28 @@ if ($user_role !== 'admin') {
     exit;
 }
 
+// Handle user deletion
+if (isset($_GET['delete_user']) && isset($_GET['user_id'])) {
+    $user_id_to_delete = intval($_GET['user_id']);
+    try {
+        // Don't allow deleting yourself
+        if ($user_id_to_delete != $user_id) {
+            $stmt = $pdo->prepare("DELETE FROM users WHERE id = :id");
+            $stmt->execute([':id' => $user_id_to_delete]);
+            $_SESSION['flash_message'] = "User deleted successfully.";
+            $_SESSION['flash_type'] = "success";
+        } else {
+            $_SESSION['flash_message'] = "You cannot delete your own account.";
+            $_SESSION['flash_type'] = "error";
+        }
+    } catch (PDOException $e) {
+        $_SESSION['flash_message'] = "Error deleting user: " . $e->getMessage();
+        $_SESSION['flash_type'] = "error";
+    }
+    header('Location: admin.php');
+    exit;
+}
+
 // Fetch system statistics
 try {
     // Total users by role
@@ -57,6 +79,7 @@ try {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard - CleanCare</title>
     <link rel="stylesheet" href="../frontend/css/style.css">
+    <link rel="stylesheet" href="../frontend/css/dashboard.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
@@ -165,10 +188,10 @@ try {
             <div style="background: white; padding: 30px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); margin-bottom: 40px;">
                 <h3 style="color: #2c5aa0; margin-bottom: 20px;">Admin Actions</h3>
                 <div style="display: flex; gap: 15px; flex-wrap: wrap;">
-                    <a href="#add-user" class="btn-primary" style="display: inline-block;">➕ Add New User</a>
-                    <a href="#manage-bookings" class="btn-outline">📋 Manage Bookings</a>
-                    <a href="#reports" class="btn-outline">📊 Generate Reports</a>
-                    <a href="#settings" class="btn-outline">⚙️ System Settings</a>
+                    <a href="../pages/add_user.php" class="btn-primary" style="display: inline-block; text-decoration: none;">➕ Add New User</a>
+                    <a href="#bookings" class="btn-outline" style="display: inline-block; text-decoration: none;">📋 Manage Bookings</a>
+                    <a href="../pages/reports.php" class="btn-outline" style="display: inline-block; text-decoration: none;">📊 Generate Reports</a>
+                    <a href="../pages/settings.php" class="btn-outline" style="display: inline-block; text-decoration: none;">⚙️ System Settings</a>
                 </div>
             </div>
 
@@ -216,8 +239,8 @@ try {
                                     </td>
                                     <td style="padding: 12px; font-weight: 600;">R<?= number_format($booking['price'], 2) ?></td>
                                     <td style="padding: 12px; text-align: center;">
-                                        <button style="background: #2c5aa0; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.85rem;">
-                                            Manage
+                                        <button onclick="viewBooking(<?= $booking['id'] ?>)" style="background: #2c5aa0; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.85rem;">
+                                            View
                                         </button>
                                     </td>
                                 </tr>
@@ -248,31 +271,33 @@ try {
                                 </tr>
                             </thead>
                             <tbody>
-                                <?php foreach ($recent_users as $user): 
+                                <?php foreach ($recent_users as $user_row): 
                                     $role_colors = [
                                         'admin' => '#dc3545',
                                         'cleaner' => '#FFC107',
                                         'customer' => '#28a745'
                                     ];
-                                    $role_color = $role_colors[$user['role']] ?? '#666';
+                                    $role_color = $role_colors[$user_row['role']] ?? '#666';
                                 ?>
                                 <tr style="border-bottom: 1px solid #dee2e6;">
-                                    <td style="padding: 12px;">#<?= $user['id'] ?></td>
-                                    <td style="padding: 12px;"><?= htmlspecialchars($user['name']) ?></td>
-                                    <td style="padding: 12px;"><?= htmlspecialchars($user['email']) ?></td>
+                                    <td style="padding: 12px;">#<?= $user_row['id'] ?></td>
+                                    <td style="padding: 12px;"><?= htmlspecialchars($user_row['name']) ?></td>
+                                    <td style="padding: 12px;"><?= htmlspecialchars($user_row['email']) ?></td>
                                     <td style="padding: 12px;">
                                         <span style="background: <?= $role_color ?>; color: white; padding: 4px 12px; border-radius: 12px; font-size: 0.85rem; font-weight: 600;">
-                                            <?= ucfirst($user['role']) ?>
+                                            <?= ucfirst($user_row['role']) ?>
                                         </span>
                                     </td>
-                                    <td style="padding: 12px;"><?= date('d M Y', strtotime($user['created_at'])) ?></td>
+                                    <td style="padding: 12px;"><?= date('d M Y', strtotime($user_row['created_at'])) ?></td>
                                     <td style="padding: 12px; text-align: center;">
-                                        <button style="background: #2c5aa0; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; margin: 2px;">
+                                        <button onclick="editUser(<?= $user_row['id'] ?>)" style="background: #2c5aa0; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; margin: 2px;">
                                             Edit
                                         </button>
-                                        <button style="background: #dc3545; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; margin: 2px;">
+                                        <?php if ($user_row['id'] != $user_id): ?>
+                                        <button onclick="deleteUser(<?= $user_row['id'] ?>, '<?= htmlspecialchars($user_row['name']) ?>')" style="background: #dc3545; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; margin: 2px;">
                                             Delete
                                         </button>
+                                        <?php endif; ?>
                                     </td>
                                 </tr>
                                 <?php endforeach; ?>
@@ -292,5 +317,24 @@ try {
             </div>
         </div>
     </footer>
+
+    <script src="../frontend/js/main.js"></script>
+    <script>
+        function viewBooking(bookingId) {
+            alert('View booking details for ID: ' + bookingId + '\n\nThis would open a detailed view page.');
+            // window.location.href = '../pages/booking_details.php?id=' + bookingId;
+        }
+
+        function editUser(userId) {
+            alert('Edit user ID: ' + userId + '\n\nThis would open an edit form.');
+            // window.location.href = '../pages/edit_user.php?id=' + userId;
+        }
+
+        function deleteUser(userId, userName) {
+            if (confirm('Are you sure you want to delete user: ' + userName + '?\n\nThis action cannot be undone.')) {
+                window.location.href = 'admin.php?delete_user=1&user_id=' + userId;
+            }
+        }
+    </script>
 </body>
 </html>

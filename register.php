@@ -66,11 +66,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     ':role' => $role
                 ]);
                 
-                $form_message = "Success! Account created for " . htmlspecialchars($fullName) . ". You can now log in.";
-                $message_type = 'success';
-                
-                // Clear form fields on success
-                $fullName = $email = $phone = $address = '';
+                // SUCCESS - Redirect to login with success message
+                $_SESSION['registration_success'] = "Account created successfully! Please login with your credentials.";
+                header('Location: login.php');
+                exit;
             }
         } catch (PDOException $e) {
             error_log("Registration error: " . $e->getMessage());
@@ -92,7 +91,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <body class="auth-body">
     <section class="auth-section-centered">
         <div class="auth-container-centered" style="max-width: 550px;">
-            <!-- Brand Header -->
             <div class="auth-brand-compact">
                 <div class="logo-icon-small">
                     <svg viewBox="0 0 60 60" width="60" height="60">
@@ -110,10 +108,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <p class="brand-subtitle-small">Create your account</p>
             </div>
 
-            <!-- Registration Form -->
             <div class="auth-card-compact">
                 <?php if ($form_message): ?>
-                    <div id="phpMessage" class="<?= $message_type === 'error' ? 'error-message' : 'success-message' ?>" style="display: block;">
+                    <div class="<?= $message_type === 'error' ? 'error-message' : 'success-message' ?>" style="display: block; margin-bottom: 15px;">
                         <?= $form_message ?>
                     </div>
                 <?php endif; ?>

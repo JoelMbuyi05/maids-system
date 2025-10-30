@@ -2,6 +2,13 @@
 // Start the session at the very beginning
 session_start();
 
+// Check if redirected from registration
+$registration_success = '';
+if (isset($_SESSION['registration_success'])) {
+    $registration_success = $_SESSION['registration_success'];
+    unset($_SESSION['registration_success']);
+}
+
 // Check if the user is already logged in, redirect to index if true
 if (isset($_SESSION['user_id'])) {
     header('Location: index.php');
@@ -99,6 +106,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             </div>
 
             <div class="auth-card-compact">
+                <!-- Registration Success Message -->
+                <?php if ($registration_success): ?>
+                    <div class="success-message" style="display: block; margin-bottom: 15px; background: #d4edda; color: #155724; padding: 12px; border-radius: 6px; border: 1px solid #c3e6cb;">
+                        ✅ <?= htmlspecialchars($registration_success) ?>
+                    </div>
+                <?php endif; ?>
+
                 <!-- Error Message Display -->
                 <?php if ($error_message): ?>
                     <div class="error-message" style="display: block; margin-bottom: 15px;">
@@ -134,6 +148,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 <div class="text-center">
                     <a href="register.php" class="btn-create-account-compact">Create New Account</a>
                 </div>
+                
+                <!-- Demo Credentials Info 
+                <div style="margin-top: 20px; padding: 15px; background: #f0f8ff; border-radius: 8px; font-size: 0.85rem; color: #2c5aa0;">
+                    <strong>🧪 Demo Accounts:</strong><br>
+                    Admin: admin@cleancare.com / admin123<br>
+                    Cleaner: sarah@cleancare.com / cleaner123<br>
+                    Customer: john@example.com / customer123
+                </div>-->
             </div>
         </div>
     </section>

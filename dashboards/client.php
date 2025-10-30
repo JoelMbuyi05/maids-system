@@ -113,9 +113,9 @@ try {
             <div style="background: white; padding: 30px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); margin-bottom: 40px;">
                 <h3 style="color: #2c5aa0; margin-bottom: 20px;">Quick Actions</h3>
                 <div style="display: flex; gap: 15px; flex-wrap: wrap;">
-                    <a href="#book-service" class="btn-primary" style="display: inline-block;">📅 Book New Service</a>
-                    <a href="#my-bookings" class="btn-outline">📋 View All Bookings</a>
-                    <a href="#profile" class="btn-outline">👤 Edit Profile</a>
+                    <a href="../pages/book_service.php" class="btn-primary" style="display: inline-block; text-decoration: none;">📅 Book New Service</a>
+                    <a href="#bookings" class="btn-outline" style="display: inline-block; text-decoration: none;">📋 View All Bookings</a>
+                    <a href="../pages/profile.php" class="btn-outline" style="display: inline-block; text-decoration: none;">👤 Edit Profile</a>
                 </div>
             </div>
 
@@ -125,9 +125,10 @@ try {
                 
                 <?php if (empty($bookings)): ?>
                     <div style="text-align: center; padding: 40px; color: #999;">
-                        <p style="font-size: 1.2rem; margin-bottom: 20px;">📭 No bookings yet</p>
+                        <p style="font-size: 3rem; margin-bottom: 10px;">📭</p>
+                        <p style="font-size: 1.2rem; margin-bottom: 20px;">No bookings yet</p>
                         <p>Start by booking your first cleaning service!</p>
-                        <a href="#book-service" class="btn-primary" style="display: inline-block; margin-top: 20px;">Book Now</a>
+                        <a href="../pages/book_service.php" class="btn-primary" style="display: inline-block; margin-top: 20px; text-decoration: none;">Book Now</a>
                     </div>
                 <?php else: ?>
                     <div style="overflow-x: auto;">
@@ -168,9 +169,17 @@ try {
                                     </td>
                                     <td style="padding: 12px; font-weight: 600;">R<?= number_format($booking['price'], 2) ?></td>
                                     <td style="padding: 12px; text-align: center;">
-                                        <button style="background: #2c5aa0; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.85rem;">
-                                            View Details
-                                        </button>
+                                        <?php if ($booking['status'] === 'pending' || $booking['status'] === 'confirmed'): ?>
+                                            <button onclick="cancelBooking(<?= $booking['id'] ?>)" style="background: #dc3545; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.85rem;">
+                                                Cancel
+                                            </button>
+                                        <?php elseif ($booking['status'] === 'completed'): ?>
+                                            <button onclick="leaveFeedback(<?= $booking['id'] ?>)" style="background: #FFC107; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.85rem;">
+                                                Leave Feedback
+                                            </button>
+                                        <?php else: ?>
+                                            <span style="color: #999; font-size: 0.85rem;">No actions</span>
+                                        <?php endif; ?>
                                     </td>
                                 </tr>
                                 <?php endforeach; ?>
@@ -190,5 +199,42 @@ try {
             </div>
         </div>
     </footer>
+
+    <script src="../frontend/js/main.js"></script>
+    <script src="../frontend/js/booking.js"></script>
+    <script>
+        function cancelBooking(bookingId) {
+            if (!confirm('Are you sure you want to cancel this booking?')) {
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('action', 'cancel');
+            formData.append('booking_id', bookingId);
+            
+            fetch('../backend/booking_process.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    location.reload();
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again.');
+            });
+        }
+
+        function leaveFeedback(bookingId) {
+            alert('Feedback feature coming soon! Booking ID: ' + bookingId);
+            // Will be implemented with feedback_process.php
+        }
+    </script>
 </body>
 </html>
