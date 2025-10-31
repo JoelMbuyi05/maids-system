@@ -110,13 +110,13 @@ try {
                 </div>
             </div>
 
-            <!-- Quick Actions -->
+                <!-- Quick Actions -->
             <div style="background: white; padding: 30px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); margin-bottom: 40px;">
                 <h3 style="color: #2c5aa0; margin-bottom: 20px;">Quick Actions</h3>
                 <div style="display: flex; gap: 15px; flex-wrap: wrap;">
                     <a href="#jobs" class="btn-primary" style="display: inline-block; text-decoration: none;">🔍 View My Jobs</a>
-                    <a href="../pages/schedule.php" class="btn-outline" style="display: inline-block; text-decoration: none;">📅 My Schedule</a>
-                    <a href="../pages/profile.php" class="btn-outline" style="display: inline-block; text-decoration: none;">👤 Edit Profile</a>
+                    <a href="../backend/schedule.php" class="btn-outline" style="display: inline-block; text-decoration: none;">📅 My Schedule</a>
+                    <a href="../backend/profile.php" class="btn-outline" style="display: inline-block; text-decoration: none;">👤 Edit Profile</a>
                 </div>
             </div>
 

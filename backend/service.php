@@ -73,7 +73,7 @@ $is_logged_in = isset($_SESSION['user_id']);
                         <li>Bathroom sanitization</li>
                         <li>Weekly or bi-weekly schedule</li>
                     </ul>
-                    <a href="<?= $is_logged_in ? 'book_service.php' : '../register.php' ?>" class="btn-primary">Book Now</a>
+                    <a href="<?= $is_logged_in ? 'book_service.php' : '../login.php' ?>" class="btn-primary">Book Now</a>
                 </div>
 
                 <!-- Deep Cleaning -->
@@ -89,7 +89,7 @@ $is_logged_in = isset($_SESSION['user_id']);
                         <li>Carpet & upholstery cleaning</li>
                         <li>Window washing (interior)</li>
                     </ul>
-                    <a href="<?= $is_logged_in ? 'book_service.php' : '../register.php' ?>" class="btn-primary">Book Now</a>
+                    <a href="<?= $is_logged_in ? 'book_service.php' : '../login.php' ?>" class="btn-primary">Book Now</a>
                 </div>
 
                 <!-- Move In/Out -->
@@ -104,7 +104,7 @@ $is_logged_in = isset($_SESSION['user_id']);
                         <li>Bathrooms & fixtures</li>
                         <li>Windows & doors</li>
                     </ul>
-                    <a href="<?= $is_logged_in ? 'book_service.php' : '../register.php' ?>" class="btn-primary">Book Now</a>
+                    <a href="<?= $is_logged_in ? 'book_service.php' : '../login.php' ?>" class="btn-primary">Book Now</a>
                 </div>
 
                 <!-- Office Cleaning -->
@@ -119,7 +119,7 @@ $is_logged_in = isset($_SESSION['user_id']);
                         <li>Trash removal</li>
                         <li>After-hours service available</li>
                     </ul>
-                    <a href="<?= $is_logged_in ? 'book_service.php' : '../register.php' ?>" class="btn-primary">Book Now</a>
+                    <a href="<?= $is_logged_in ? 'book_service.php' : '../login.php' ?>" class="btn-primary">Book Now</a>
                 </div>
 
                 <!-- Carpet Cleaning -->
@@ -134,7 +134,7 @@ $is_logged_in = isset($_SESSION['user_id']);
                         <li>Fast drying</li>
                         <li>Eco-friendly products</li>
                     </ul>
-                    <a href="<?= $is_logged_in ? 'book_service.php' : '../register.php' ?>" class="btn-primary">Book Now</a>
+                    <a href="<?= $is_logged_in ? 'book_service.php' : '../login.php' ?>" class="btn-primary">Book Now</a>
                 </div>
 
                 <!-- Window Cleaning -->
@@ -149,7 +149,7 @@ $is_logged_in = isset($_SESSION['user_id']);
                         <li>High-rise capability</li>
                         <li>Safety guaranteed</li>
                     </ul>
-                    <a href="<?= $is_logged_in ? 'book_service.php' : '../register.php' ?>" class="btn-primary">Book Now</a>
+                    <a href="<?= $is_logged_in ? 'book_service.php' : '../login.php' ?>" class="btn-primary">Book Now</a>
                 </div>
             </div>
 

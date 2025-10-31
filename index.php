@@ -245,7 +245,7 @@ $user_role = $is_logged_in ? htmlspecialchars($_SESSION['user_role']) : '';
                     <div class="agent-rating">⭐⭐⭐⭐⭐ 4.9</div>
                     <p class="agent-experience">5 years experience</p>
                     <p class="agent-specialty">Specializes in deep cleaning</p>
-                    <a href="<?= $is_logged_in ? 'dashboards/client.php' : 'register.php' ?>" class="btn-small">Book Now</a>
+                    <a href="<?= $is_logged_in ? 'dashboards/client.php' : 'login.php' ?>" class="btn-small">Book Now</a>
                 </div>
                 <div class="agent-card">
                     <div class="agent-photo">
@@ -255,7 +255,7 @@ $user_role = $is_logged_in ? htmlspecialchars($_SESSION['user_role']) : '';
                     <div class="agent-rating">⭐⭐⭐⭐⭐ 4.8</div>
                     <p class="agent-experience">7 years experience</p>
                     <p class="agent-specialty">Expert in office cleaning</p>
-                    <a href="<?= $is_logged_in ? 'dashboards/client.php' : 'register.php' ?>" class="btn-small">Book Now</a>
+                    <a href="<?= $is_logged_in ? 'dashboards/client.php' : 'login.php' ?>" class="btn-small">Book Now</a>
                 </div>
                 <div class="agent-card">
                     <div class="agent-photo">
@@ -265,7 +265,7 @@ $user_role = $is_logged_in ? htmlspecialchars($_SESSION['user_role']) : '';
                     <div class="agent-rating">⭐⭐⭐⭐⭐ 5.0</div>
                     <p class="agent-experience">3 years experience</p>
                     <p class="agent-specialty">Regular home maintenance</p>
-                    <a href="<?= $is_logged_in ? 'dashboards/client.php' : 'register.php' ?>" class="btn-small">Book Now</a>
+                    <a href="<?= $is_logged_in ? 'dashboards/client.php' : 'login.php' ?>" class="btn-small">Book Now</a>
                 </div>
             </div>
         </div>

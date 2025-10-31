@@ -188,10 +188,10 @@ try {
             <div style="background: white; padding: 30px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); margin-bottom: 40px;">
                 <h3 style="color: #2c5aa0; margin-bottom: 20px;">Admin Actions</h3>
                 <div style="display: flex; gap: 15px; flex-wrap: wrap;">
-                    <a href="../pages/add_user.php" class="btn-primary" style="display: inline-block; text-decoration: none;">➕ Add New User</a>
+                    <a href="../backend/add_user.php" class="btn-primary" style="display: inline-block; text-decoration: none;">➕ Add New User</a>
                     <a href="#bookings" class="btn-outline" style="display: inline-block; text-decoration: none;">📋 Manage Bookings</a>
-                    <a href="../pages/reports.php" class="btn-outline" style="display: inline-block; text-decoration: none;">📊 Generate Reports</a>
-                    <a href="../pages/settings.php" class="btn-outline" style="display: inline-block; text-decoration: none;">⚙️ System Settings</a>
+                    <a href="../backend/reports.php" class="btn-outline" style="display: inline-block; text-decoration: none;">📊 Generate Reports</a>
+                    <a href="../backend/settings.php" class="btn-outline" style="display: inline-block; text-decoration: none;">⚙️ System Settings</a>
                 </div>
             </div>
 
@@ -321,13 +321,11 @@ try {
     <script src="../frontend/js/main.js"></script>
     <script>
         function viewBooking(bookingId) {
-            alert('View booking details for ID: ' + bookingId + '\n\nThis would open a detailed view page.');
-            // window.location.href = '../pages/booking_details.php?id=' + bookingId;
+            window.location.href = '../backend/booking_details.php?id=' + bookingId;
         }
 
         function editUser(userId) {
-            alert('Edit user ID: ' + userId + '\n\nThis would open an edit form.');
-            // window.location.href = '../pages/edit_user.php?id=' + userId;
+            window.location.href = '../backend/edit_user.php?id=' + userId;
         }
 
         function deleteUser(userId, userName) {

@@ -115,7 +115,7 @@ try {
                 <div style="display: flex; gap: 15px; flex-wrap: wrap;">
                     <a href="../pages/book_service.php" class="btn-primary" style="display: inline-block; text-decoration: none;">📅 Book New Service</a>
                     <a href="#bookings" class="btn-outline" style="display: inline-block; text-decoration: none;">📋 View All Bookings</a>
-                    <a href="../pages/profile.php" class="btn-outline" style="display: inline-block; text-decoration: none;">👤 Edit Profile</a>
+                    <a href="../backend/profile.php" class="btn-outline" style="display: inline-block; text-decoration: none;">👤 Edit Profile</a>
                 </div>
             </div>
 
