@@ -30,6 +30,19 @@ A simple cleaning service management system built with PHP, MySQL, HTML, CSS, an
 
   
 ## Tech Stack
-- Frontend: HTML, CSS, JS
-- Backend: PHP
-- Database: MySQL
+
+### Frontend
+- **HTML5** - Semantic markup
+- **CSS3** - Modern styling with Flexbox/Grid
+- **JavaScript (ES6+)** - Client-side interactivity
+- **Inter Font** - Clean typography
+
+### Backend
+- **PHP 7.4+** - Server-side logic
+- **MySQL 8.0+** - Relational database
+- **PDO** - Secure database operations
+
+### Development Tools
+- **XAMPP** - Local development environment
+- **phpMyAdmin** - Database management
+- **Git** - Version control
