@@ -226,7 +226,7 @@ $user_role = $is_logged_in ? htmlspecialchars($_SESSION['user_role']) : '';
                 </div>
             </div>
             <div class="text-center">
-                <a href="backend/service.php" class="btn-primary">View All Services</a>
+                <a href="pages/service.php" class="btn-primary">View All Services</a>
             </div>
         </div>
     </section>
