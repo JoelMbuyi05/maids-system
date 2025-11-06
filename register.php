@@ -53,7 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // Map userType to role
                 $role = ($userType === 'cleaner') ? 'cleaner' : 'customer';
                 
-                // Insert new user
+                // Insert new user into users table
                 $sql = "INSERT INTO users (name, email, phone, address, password, role) 
                         VALUES (:name, :email, :phone, :address, :password, :role)";
                 $stmt = $pdo->prepare($sql);
@@ -65,6 +65,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     ':password' => $hashedPassword,
                     ':role' => $role
                 ]);
+                
+                $user_id = $pdo->lastInsertId();
+                
+                // *** AUTO-SYNC TO CUSTOMERS/EMPLOYEES TABLES ***
+                try {
+                    if ($role === 'customer') {
+                        // Add to customers table
+                        $stmt = $pdo->prepare("INSERT INTO customers (name, email, phone, address) VALUES (:name, :email, :phone, :address)");
+                        $stmt->execute([
+                            ':name' => $fullName,
+                            ':email' => $email,
+                            ':phone' => $phone,
+                            ':address' => $address
+                        ]);
+                    } 
+                    elseif ($role === 'cleaner') {
+                        // Add to employees table
+                        $emp_number = 'EMP' . str_pad($user_id, 4, '0', STR_PAD_LEFT);
+                        
+                        $stmt = $pdo->prepare("INSERT INTO employees (name, emp_number, email, phone) VALUES (:name, :emp_number, :email, :phone)");
+                        $stmt->execute([
+                            ':name' => $fullName,
+                            ':emp_number' => $emp_number,
+                            ':email' => $email,
+                            ':phone' => $phone
+                        ]);
+                    }
+                } catch (PDOException $e) {
+                    // Log but don't fail registration
+                    error_log("Sync to customers/employees table error: " . $e->getMessage());
+                }
                 
                 // SUCCESS - Redirect to login with success message
                 $_SESSION['registration_success'] = "Account created successfully! Please login with your credentials.";
