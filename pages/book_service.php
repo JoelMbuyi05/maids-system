@@ -8,14 +8,80 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'customer') {
     exit;
 }
 
+$user_id = $_SESSION['user_id'];
 $user_name = $_SESSION['user_name'];
+$user_email = $_SESSION['user_email'];
 
-// Get available cleaners
+// Get available cleaners (from employees table)
 try {
-    $stmt = $pdo->query("SELECT id, name FROM users WHERE role = 'cleaner' ORDER BY name");
+    $stmt = $pdo->query("SELECT id, name FROM employees ORDER BY name");
     $cleaners = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
     $cleaners = [];
+}
+
+// Handle form submission
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    try {
+        $service_type = $_POST['service_type'];
+        $date = $_POST['date'];
+        $time = $_POST['time'];
+        $cleaner_id = !empty($_POST['cleaner_id']) ? intval($_POST['cleaner_id']) : null;
+        $address = $_POST['address'];
+        $price = floatval($_POST['price']);
+        
+        // Check if customer exists in customers table, insert if not
+        $stmt = $pdo->prepare("SELECT id FROM customers WHERE email = :email");
+        $stmt->execute([':email' => $user_email]);
+        $customer = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if ($customer) {
+            $customer_id = $customer['id'];
+        } else {
+            // Insert new customer
+            $stmt = $pdo->prepare("INSERT INTO customers (name, email, phone, address) VALUES (:name, :email, '', :address)");
+            $stmt->execute([
+                ':name' => $user_name,
+                ':email' => $user_email,
+                ':address' => $address
+            ]);
+            $customer_id = $pdo->lastInsertId();
+        }
+        
+        // Determine package based on service type
+        $package_map = [
+            'Regular Cleaning' => 'Basic Clean',
+            'Deep Cleaning' => 'Deep Clean',
+            'Move In/Out' => 'Premium Clean',
+            'Office Cleaning' => 'Basic Clean'
+        ];
+        $package = $package_map[$service_type] ?? 'Basic Clean';
+        
+        // Extract location from address (first part before comma)
+        $location_parts = explode(',', $address);
+        $location = trim($location_parts[0]);
+        
+        // Insert booking into bookings table (completed = 0 for pending)
+        $stmt = $pdo->prepare("INSERT INTO bookings (customer_id, cleaner_id, package, location, price, booking_date, completed) 
+                               VALUES (:customer_id, :cleaner_id, :package, :location, :price, :booking_date, 0)");
+        $stmt->execute([
+            ':customer_id' => $customer_id,
+            ':cleaner_id' => $cleaner_id,
+            ':package' => $package,
+            ':location' => $location,
+            ':price' => $price,
+            ':booking_date' => $date
+        ]);
+        
+        $_SESSION['flash_message'] = "Booking created successfully! We'll contact you soon.";
+        $_SESSION['flash_type'] = "success";
+        header('Location: ../dashboards/client.php');
+        exit;
+        
+    } catch (PDOException $e) {
+        $error_message = "Error creating booking. Please try again.";
+        error_log("Booking error: " . $e->getMessage());
+    }
 }
 ?>
 <!DOCTYPE html>
@@ -70,9 +136,13 @@ try {
             <div style="max-width: 800px; margin: 0 auto; background: white; padding: 40px; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.08);">
                 <h2 style="color: #2c5aa0; margin-bottom: 30px; text-align: center;">📅 Book a Cleaning Service</h2>
                 
-                <div id="message"></div>
+                <?php if (isset($error_message)): ?>
+                    <div style="background: #fff3f3; border: 1px solid #ffaaaa; padding: 12px; border-radius: 6px; color: #cc0000; margin-bottom: 20px;">
+                        <?= $error_message ?>
+                    </div>
+                <?php endif; ?>
                 
-                <form id="bookingForm">
+                <form method="POST">
                     <div style="margin-bottom: 20px;">
                         <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">Service Type *</label>
                         <select name="service_type" id="service_type" required style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
@@ -116,7 +186,7 @@ try {
                         <input type="hidden" name="price" id="price" value="0">
                     </div>
 
-                    <button type="submit" style="width: 100%; padding: 15px; background: #2c5aa0; color: white; border: none; border-radius: 8px; font-size: 1.1rem; font-weight: 600; cursor: pointer;">
+                    <button type="submit" style="width: 100%; padding: 15px; background: #2c5aa0; color: white; border: none; border-radius: 8px; font-size: 1.1rem; font-weight: 600; cursor: pointer; transition: all 0.3s;">
                         Book Service Now
                     </button>
                 </form>
@@ -124,8 +194,14 @@ try {
         </div>
     </section>
 
-    <script src="../frontend/js/main.js"></script>
-    <script src="../frontend/js/booking.js"></script>
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-bottom">
+                <p>&copy; 2025 CleanCare. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
     <script>
         // Update price when service is selected
         document.getElementById('service_type').addEventListener('change', function() {
