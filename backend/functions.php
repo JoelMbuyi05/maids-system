@@ -92,26 +92,18 @@ function format_currency($amount) {
 function get_cleaner_status($cleaner_id, $pdo) {
     try {
         $stmt = $pdo->prepare("SELECT COUNT(*) as active_bookings FROM bookings 
-                               WHERE cleaner_id = :cleaner_id 
-                               AND status IN ('pending', 'confirmed') 
-                               AND date >= CURDATE()");
+                             WHERE cleaner_id = :cleaner_id 
+                             AND status IN ('pending', 'confirmed', 'assigned') 
+                             AND date >= CURDATE()");
         $stmt->execute([':cleaner_id' => $cleaner_id]);
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
         
-        return $result['active_bookings'] < 3 ? 'available' : 'busy';
+        // Assuming 'assigned' is also a work status
+        return $result['active_bookings'] < 3 ? 'available' : 'busy'; 
     } catch (PDOException $e) {
         error_log("Error checking cleaner status: " . $e->getMessage());
         return 'unknown';
     }
-}
-
-/**
- * Send email notification (placeholder)
- */
-function send_notification($to, $subject, $message) {
-    // TODO: Implement email sending with PHPMailer
-    error_log("Email notification: To: $to, Subject: $subject");
-    return true;
 }
 
 /**
@@ -134,7 +126,7 @@ function log_activity($user_id, $action, $details = '') {
         $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
         
         $stmt = $pdo->prepare("INSERT INTO activity_logs (user_id, action, details, ip_address) 
-                               VALUES (:user_id, :action, :details, :ip)");
+                             VALUES (:user_id, :action, :details, :ip)");
         $stmt->execute([
             ':user_id' => $user_id,
             ':action' => $action,
@@ -159,10 +151,10 @@ function generate_booking_ref() {
 function check_booking_availability($cleaner_id, $date, $time, $pdo) {
     try {
         $stmt = $pdo->prepare("SELECT COUNT(*) as count FROM bookings 
-                               WHERE cleaner_id = :cleaner_id 
-                               AND date = :date 
-                               AND time = :time 
-                               AND status NOT IN ('cancelled', 'rejected')");
+                             WHERE cleaner_id = :cleaner_id 
+                             AND date = :date 
+                             AND time = :time 
+                             AND status NOT IN ('cancelled', 'rejected', 'completed', 'review_pending')");
         $stmt->execute([
             ':cleaner_id' => $cleaner_id,
             ':date' => $date,
@@ -175,5 +167,111 @@ function check_booking_availability($cleaner_id, $date, $time, $pdo) {
         error_log("Availability check error: " . $e->getMessage());
         return false;
     }
+}
+
+// ====================================================================
+// NEW: Notification & Email Helpers
+// ====================================================================
+
+/**
+ * NEW: Saves a notification to the database (using your schema)
+ */
+function save_user_notification($userId, $userRole, $message) {
+    global $pdo;
+    try {
+        $sql = "INSERT INTO notifications (user_id, user_role, message) 
+                VALUES (:user_id, :user_role, :message)";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([
+            ':user_id' => $userId,
+            ':user_role' => $userRole,
+            ':message' => $message
+        ]);
+        return true;
+    } catch (PDOException $e) {
+        error_log("Notification saving failed: " . $e->getMessage());
+        return false;
+    }
+}
+
+// ✅ Email notification to customer when booking is confirmed
+function sendBookingConfirmation($customerEmail, $customerName, $bookingId, $service, $date) {
+    $subject = "Booking Confirmed - CleanCare";
+    $message = "
+    Hi $customerName,<br><br>
+    Your booking <strong>#$bookingId</strong> for <strong>$service</strong> has been <strong>confirmed</strong>.<br>
+    Date: $date<br><br>
+    We’ll notify you when your cleaner is on the way!<br><br>
+    Best,<br>CleanCare Team
+    ";
+    $headers = "MIME-Version: 1.0\r\n";
+    $headers .= "Content-type:text/html;charset=UTF-8\r\n";
+    $headers .= "From: CleanCare <noreply@cleancare.com>\r\n";
+    @mail($customerEmail, $subject, $message, $headers);
+    // Log the email attempt
+    log_email($customerEmail, $subject, $message);
+}
+
+// ✅ Email notification to admin when job is completed
+function sendJobCompletionNotification($adminEmail, $cleanerName, $bookingId) {
+    $subject = "Job Completed - Booking #$bookingId";
+    $message = "
+    Hello Admin,<br><br>
+    Cleaner <strong>$cleanerName</strong> has marked booking #$bookingId as completed.<br>
+    Please verify the job and process payment.<br><br>
+    Regards,<br>CleanCare System
+    ";
+    $headers = "MIME-Version: 1.0\r\n";
+    $headers .= "Content-type:text/html;charset=UTF-8\r\n";
+    $headers .= "From: CleanCare <noreply@cleancare.com>\r\n";
+    @mail($adminEmail, $subject, $message, $headers);
+    // Log the email attempt
+    log_email($adminEmail, $subject, $message);
+}
+
+// ✅ Notification when admin assigns a cleaner
+function sendCleanerAssignedNotification($cleanerEmail, $cleanerName, $service, $date) {
+    $subject = "New Job Assigned - CleanCare";
+    $message = "
+    Hi $cleanerName,<br><br>
+    You’ve been assigned a new cleaning job.<br><br>
+    Service: <strong>$service</strong><br>
+    Date: <strong>$date</strong><br><br>
+    Please check your dashboard for full details.<br><br>
+    Regards,<br>CleanCare System
+    ";
+    $headers = "MIME-Version: 1.0\r\n";
+    $headers .= "Content-type:text/html;charset=UTF-8\r\n";
+    $headers .= "From: CleanCare <noreply@cleancare.com>\r\n";
+    @mail($cleanerEmail, $subject, $message, $headers);
+    // Log the email attempt
+    log_email($cleanerEmail, $subject, $message);
+}
+
+// NEW: Function to log emails into your email_logs table
+function log_email($recipientEmail, $subject, $message) {
+    global $pdo;
+    try {
+        $stmt = $pdo->prepare("INSERT INTO email_logs (recipient_email, subject, message) 
+                               VALUES (:email, :subject, :message)");
+        $stmt->execute([
+            ':email' => $recipientEmail,
+            ':subject' => $subject,
+            ':message' => $message
+        ]);
+    } catch (PDOException $e) {
+        error_log("Email log error: " . $e->getMessage());
+    }
+}
+
+
+// Placeholder functions removed for better file separation:
+// Removed: function submitReview(...) -> now in review_api.php
+// Removed: function displayNotification(...) -> now handled by the notification table
+// Removed: function send_notification (deprecated, use dedicated email functions)
+
+function displayNotification($message, $type = 'info') {
+    // Left this here as it was in your file, but recommend removing for a full notification API
+    echo "<div class='notification notification-$type'>$message</div>";
 }
 ?>

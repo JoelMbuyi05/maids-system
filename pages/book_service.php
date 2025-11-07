@@ -49,25 +49,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
         // Determine package based on service type
-        $package_map = [
-            'Regular Cleaning' => 'Basic Clean',
-            'Deep Cleaning' => 'Deep Clean',
-            'Move In/Out' => 'Premium Clean',
-            'Office Cleaning' => 'Basic Clean'
+        $service_map = [
+            'Regular Cleaning' => 'Regular Cleaning',
+            'Deep Cleaning' => 'Deep Cleaning',
+            'Move In/Out' => 'Move In/Out Cleaning',
+            'Office Cleaning' => 'Office Cleaning',
+            'Carpet Cleaning' => 'Carpet Cleaning',
+            'Window Cleaning' => 'Window Cleaning'
         ];
-        $package = $package_map[$service_type] ?? 'Basic Clean';
+        $service = $service_map[$service_type] ?? 'Basic Clean';
         
         // Extract location from address (first part before comma)
         $location_parts = explode(',', $address);
         $location = trim($location_parts[0]);
         
         // Insert booking into bookings table (completed = 0 for pending)
-        $stmt = $pdo->prepare("INSERT INTO bookings (customer_id, cleaner_id, package, location, price, booking_date, completed) 
-                               VALUES (:customer_id, :cleaner_id, :package, :location, :price, :booking_date, 0)");
+        $stmt = $pdo->prepare("INSERT INTO bookings (customer_id, cleaner_id, service, location, price, booking_date, completed) 
+                               VALUES (:customer_id, :cleaner_id, :service, :location, :price, :booking_date, 0)");
         $stmt->execute([
             ':customer_id' => $customer_id,
             ':cleaner_id' => $cleaner_id,
-            ':package' => $package,
+            ':service' => $service,
             ':location' => $location,
             ':price' => $price,
             ':booking_date' => $date
@@ -151,6 +153,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <option value="Deep Cleaning">Deep Cleaning - R1,200</option>
                             <option value="Move In/Out">Move In/Out - R1,500</option>
                             <option value="Office Cleaning">Office Cleaning - R800</option>
+                            <option value="Carpet Cleaning">Carpet Cleaning - R600</option>
+                            <option value="Window Cleaning">Window Cleaning - R400</option>
                         </select>
                     </div>
 
@@ -209,7 +213,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'Regular Cleaning': 500,
                 'Deep Cleaning': 1200,
                 'Move In/Out': 1500,
-                'Office Cleaning': 800
+                'Office Cleaning': 800,
+                'Carpet Cleaning': 600,
+                'Window Cleaning': 400
             };
             
             const price = prices[this.value] || 0;

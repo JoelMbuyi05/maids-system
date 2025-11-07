@@ -9,31 +9,44 @@ if ($user_role !== 'customer') {
     exit;
 }
 
-// Fetch user's bookings
+// Get customer_id from customers table using email
 try {
-    $stmt = $pdo->prepare("SELECT b.*, u.name as cleaner_name 
+    $stmt = $pdo->prepare("SELECT id FROM customers WHERE email = :email");
+    $stmt->execute([':email' => $user_email]);
+    $customer = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    if (!$customer) {
+        // Auto-create customer if doesn't exist
+        $stmt = $pdo->prepare("INSERT INTO customers (name, email, phone, address) VALUES (:name, :email, '', '')");
+        $stmt->execute([':name' => $user_name, ':email' => $user_email]);
+        $customer_id = $pdo->lastInsertId();
+    } else {
+        $customer_id = $customer['id'];
+    }
+    
+    // Fetch user's bookings using customer_id from customers table
+    $stmt = $pdo->prepare("SELECT b.*, e.name as cleaner_name, e.phone as cleaner_phone
                            FROM bookings b 
-                           LEFT JOIN users u ON b.cleaner_id = u.id 
-                           WHERE b.customer_id = :user_id 
-                           ORDER BY b.date DESC, b.time DESC 
+                           LEFT JOIN employees e ON b.cleaner_id = e.id 
+                           WHERE b.customer_id = :customer_id 
+                           ORDER BY b.booking_date DESC 
                            LIMIT 10");
-    $stmt->execute([':user_id' => $user_id]);
+    $stmt->execute([':customer_id' => $customer_id]);
     $bookings = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
     // Get booking statistics
     $stmt = $pdo->prepare("SELECT 
                            COUNT(*) as total,
-                           SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending,
-                           SUM(CASE WHEN status = 'confirmed' THEN 1 ELSE 0 END) as confirmed,
-                           SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed
-                           FROM bookings WHERE customer_id = :user_id");
-    $stmt->execute([':user_id' => $user_id]);
+                           SUM(CASE WHEN completed = 0 THEN 1 ELSE 0 END) as pending,
+                           SUM(CASE WHEN completed = 1 THEN 1 ELSE 0 END) as completed
+                           FROM bookings WHERE customer_id = :customer_id");
+    $stmt->execute([':customer_id' => $customer_id]);
     $stats = $stmt->fetch(PDO::FETCH_ASSOC);
     
 } catch (PDOException $e) {
     error_log("Dashboard error: " . $e->getMessage());
     $bookings = [];
-    $stats = ['total' => 0, 'pending' => 0, 'confirmed' => 0, 'completed' => 0];
+    $stats = ['total' => 0, 'pending' => 0, 'completed' => 0];
 }
 ?>
 <!DOCTYPE html>
@@ -100,12 +113,8 @@ try {
                     <p style="font-size: 2rem; color: #FFC107; font-weight: 700; margin: 0;"><?= $stats['pending'] ?></p>
                 </div>
                 <div style="background: white; padding: 25px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); border-left: 4px solid #28a745;">
-                    <h3 style="color: #666; font-size: 0.9rem; margin-bottom: 10px;">Confirmed</h3>
-                    <p style="font-size: 2rem; color: #28a745; font-weight: 700; margin: 0;"><?= $stats['confirmed'] ?></p>
-                </div>
-                <div style="background: white; padding: 25px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); border-left: 4px solid #17a2b8;">
                     <h3 style="color: #666; font-size: 0.9rem; margin-bottom: 10px;">Completed</h3>
-                    <p style="font-size: 2rem; color: #17a2b8; font-weight: 700; margin: 0;"><?= $stats['completed'] ?></p>
+                    <p style="font-size: 2rem; color: #28a745; font-weight: 700; margin: 0;"><?= $stats['completed'] ?></p>
                 </div>
             </div>
 
@@ -115,7 +124,6 @@ try {
                 <div style="display: flex; gap: 15px; flex-wrap: wrap;">
                     <a href="../pages/book_service.php" class="btn-primary" style="display: inline-block; text-decoration: none;">📅 Book New Service</a>
                     <a href="#bookings" class="btn-outline" style="display: inline-block; text-decoration: none;">📋 View All Bookings</a>
-                    <a href="../pages/profile.php" class="btn-outline" style="display: inline-block; text-decoration: none;">👤 Edit Profile</a>
                 </div>
             </div>
 
@@ -135,9 +143,10 @@ try {
                         <table style="width: 100%; border-collapse: collapse;">
                             <thead>
                                 <tr style="background: #f8f9fa; border-bottom: 2px solid #dee2e6;">
-                                    <th style="padding: 12px; text-align: left;">Booking ID</th>
-                                    <th style="padding: 12px; text-align: left;">Service Type</th>
-                                    <th style="padding: 12px; text-align: left;">Date & Time</th>
+                                    <th style="padding: 12px; text-align: left;">ID</th>
+                                    <th style="padding: 12px; text-align: left;">Service</th>
+                                    <th style="padding: 12px; text-align: left;">Date</th>
+                                    <th style="padding: 12px; text-align: left;">Location</th>
                                     <th style="padding: 12px; text-align: left;">Cleaner</th>
                                     <th style="padding: 12px; text-align: left;">Status</th>
                                     <th style="padding: 12px; text-align: left;">Price</th>
@@ -146,40 +155,33 @@ try {
                             </thead>
                             <tbody>
                                 <?php foreach ($bookings as $booking): 
-                                    $status_colors = [
-                                        'pending' => '#FFC107',
-                                        'confirmed' => '#28a745',
-                                        'completed' => '#17a2b8',
-                                        'cancelled' => '#dc3545'
-                                    ];
-                                    $status_color = $status_colors[$booking['status']] ?? '#666';
+                                    $status = $booking['completed'] ? 'completed' : 'pending';
+                                    $status_color = $booking['completed'] ? '#28a745' : '#FFC107';
                                 ?>
                                 <tr style="border-bottom: 1px solid #dee2e6;">
                                     <td style="padding: 12px;">#<?= $booking['id'] ?></td>
-                                    <td style="padding: 12px;"><?= htmlspecialchars($booking['service_type']) ?></td>
+                                    <td style="padding: 12px;"><?= htmlspecialchars($booking['service']) ?></td>
+                                    <td style="padding: 12px;"><?= date('d M Y', strtotime($booking['booking_date'])) ?></td>
+                                    <td style="padding: 12px;"><?= htmlspecialchars($booking['location']) ?></td>
                                     <td style="padding: 12px;">
-                                        <?= date('d M Y', strtotime($booking['date'])) ?><br>
-                                        <small style="color: #666;"><?= date('H:i', strtotime($booking['time'])) ?></small>
+                                        <?php if ($booking['cleaner_name']): ?>
+                                            <strong><?= htmlspecialchars($booking['cleaner_name']) ?></strong><br>
+                                            <small style="color: #666;"><?= htmlspecialchars($booking['cleaner_phone']) ?></small>
+                                        <?php else: ?>
+                                            <span style="color: #999;">Not assigned</span>
+                                        <?php endif; ?>
                                     </td>
-                                    <td style="padding: 12px;"><?= htmlspecialchars($booking['cleaner_name'] ?? 'Not assigned') ?></td>
                                     <td style="padding: 12px;">
                                         <span style="background: <?= $status_color ?>; color: white; padding: 4px 12px; border-radius: 12px; font-size: 0.85rem; font-weight: 600;">
-                                            <?= ucfirst($booking['status']) ?>
+                                            <?= ucfirst($status) ?>
                                         </span>
                                     </td>
                                     <td style="padding: 12px; font-weight: 600;">R<?= number_format($booking['price'], 2) ?></td>
                                     <td style="padding: 12px; text-align: center;">
-                                        <?php if ($booking['status'] === 'pending' || $booking['status'] === 'confirmed'): ?>
-                                            <button onclick="cancelBooking(<?= $booking['id'] ?>)" style="background: #dc3545; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.85rem;">
-                                                Cancel
-                                            </button>
-                                        <?php elseif ($booking['status'] === 'completed'): ?>
-                                            <button onclick="leaveFeedback(<?= $booking['id'] ?>)" style="background: #FFC107; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.85rem;">
-                                                Leave Feedback
-                                            </button>
-                                        <?php else: ?>
-                                            <span style="color: #999; font-size: 0.85rem;">No actions</span>
-                                        <?php endif; ?>
+                                        <a href="../pages/booking_details.php?id=<?= $booking['id'] ?>" 
+                                           style="background: #2c5aa0; color: white; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 0.85rem;">
+                                            View
+                                        </a>
                                     </td>
                                 </tr>
                                 <?php endforeach; ?>
@@ -199,42 +201,5 @@ try {
             </div>
         </div>
     </footer>
-
-    <script src="../frontend/js/main.js"></script>
-    <script src="../frontend/js/booking.js"></script>
-    <script>
-        function cancelBooking(bookingId) {
-            if (!confirm('Are you sure you want to cancel this booking?')) {
-                return;
-            }
-            
-            const formData = new FormData();
-            formData.append('action', 'cancel');
-            formData.append('booking_id', bookingId);
-            
-            fetch('../backend/booking_process.php', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert(data.message);
-                    location.reload();
-                } else {
-                    alert('Error: ' + data.message);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('An error occurred. Please try again.');
-            });
-        }
-
-        function leaveFeedback(bookingId) {
-            alert('Feedback feature coming soon! Booking ID: ' + bookingId);
-            // Will be implemented with feedback_process.php
-        }
-    </script>
 </body>
 </html>

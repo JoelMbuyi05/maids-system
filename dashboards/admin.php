@@ -276,10 +276,17 @@ try {
         }
 
         .logout-link {
-            color: #dc3545;
-            text-decoration: none;
-            font-size: 0.9rem;
+            background: #dc3545;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
             font-weight: 600;
+            text-decoration: none;
+            transition: background 0.3s;
+        }
+
+        .logout-link:hover {
+            background: #c82333;
         }
 
         .admin-content {
@@ -470,29 +477,31 @@ try {
         <main class="admin-main">
             
             <div class="admin-header">
-                <div class="header-left">
-                    <button class="sidebar-toggle" onclick="toggleSidebar()">
-                        &#9776; </button>
-                    <h1>Dashboard Overview</h1>
-                </div>
+              <div class="header-left">
+                  <button class="sidebar-toggle" onclick="toggleSidebar()">
+                      &#9776;
+                  </button>
+                  <h1>Dashboard Overview</h1>
+              </div>
 
-                <div class="header-right">
-                    <span class="header-date"><?= date('l, F j, Y') ?></span>
-                    <div class="header-user-menu">
-                        <div class="header-user-avatar">
-                            <?= strtoupper(substr($user_name, 0, 1)) ?>
-                        </div>
-                        <div class="header-user-dropdown">
-                            <h4><?= htmlspecialchars($user_name) ?></h4>
-                            <p>Administrator</p>
-                            <hr>
-                            <a href="../backend/logout.php" class="logout-link">
-                                Logout
-                            </a>
-                        </div>
-                    </div>
-                </div>
+              <div class="header-right">
+                  <span class="header-date"><?= date('l, F j, Y') ?></span>
+
+                  <div class="header-user-menu">
+                      <div class="header-user-avatar">
+                          <?= strtoupper(substr($user_name, 0, 1)) ?>
+                      </div>
+                      <div class="header-user-dropdown">
+                          <h4><?= htmlspecialchars($user_name) ?></h4>
+                          <p>Administrator</p>
+                      </div>
+                  </div>
+
+                  <!-- 🔒 LOGOUT BUTTON NOW OUTSIDE THE DROPDOWN -->
+                  <a href="../backend/logout.php" class="logout-link">Logout</a>
+              </div>
             </div>
+
             
             <div class="admin-content">
                 <?php display_flash_message(); ?>

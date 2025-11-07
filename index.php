@@ -263,7 +263,7 @@ $user_role = $is_logged_in ? htmlspecialchars($_SESSION['user_role']) : '';
                     <h3>Linda Brown</h3>
                     <div class="agent-rating">⭐⭐⭐⭐⭐ 5.0</div>
                     <p class="agent-experience">3 years experience</p>
-                    <p class="agent-specialty">Regular home maintenance</p>
+                    <p class="agent-specialty">Regular home Cleaning</p>
                     <a href="<?= $is_logged_in ? 'dashboards/client.php' : 'login.php' ?>" class="btn-small">Book Now</a>
                 </div>
             </div>

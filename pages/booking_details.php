@@ -198,8 +198,8 @@ $status_color = $booking['completed'] ? '#28a745' : '#FFC107';
                     <h3 style="color: #2c5aa0; margin-bottom: 20px;">📦 Service Information</h3>
                     <div class="detail-row">
                         <div class="detail-item">
-                            <strong>Package Type</strong>
-                            <p><?= htmlspecialchars($booking['package']) ?></p>
+                            <strong>Service Type</strong>
+                            <p><?= htmlspecialchars($booking['service']) ?></p>
                         </div>
                         <div class="detail-item">
                             <strong>Booking Date</strong>
