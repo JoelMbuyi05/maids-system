@@ -11,6 +11,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'customer') {
 $user_id = $_SESSION['user_id'];
 $user_name = $_SESSION['user_name'];
 $user_email = $_SESSION['user_email'];
+$user_role = $_SESSION['user_role'];
 
 // Get available cleaners (from employees table)
 try {
@@ -23,22 +24,27 @@ try {
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
-        $service_type = $_POST['service_type'];
-        $date = $_POST['date'];
-        $time = $_POST['time'];
+        $service_type = $_POST['service_type'] ?? '';
+        $date = $_POST['date'] ?? '';
+        $time = $_POST['time'] ?? '';
         $cleaner_id = !empty($_POST['cleaner_id']) ? intval($_POST['cleaner_id']) : null;
-        $address = $_POST['address'];
-        $price = floatval($_POST['price']);
-        
-        // Check if customer exists in customers table, insert if not
+        $address = $_POST['address'] ?? '';
+        $price = floatval($_POST['price'] ?? 0);
+
+        if (!$service_type || !$date || !$time || !$address) {
+            throw new Exception("Please fill in all required fields.");
+        }
+
+        // Check or insert customer
         $stmt = $pdo->prepare("SELECT id FROM customers WHERE email = :email");
         $stmt->execute([':email' => $user_email]);
         $customer = $stmt->fetch(PDO::FETCH_ASSOC);
-        
+
         if ($customer) {
             $customer_id = $customer['id'];
+            $stmt = $pdo->prepare("UPDATE customers SET address = :address WHERE id = :id");
+            $stmt->execute([':address' => $address, ':id' => $customer_id]);
         } else {
-            // Insert new customer
             $stmt = $pdo->prepare("INSERT INTO customers (name, email, phone, address) VALUES (:name, :email, '', :address)");
             $stmt->execute([
                 ':name' => $user_name,
@@ -47,8 +53,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ]);
             $customer_id = $pdo->lastInsertId();
         }
-        
-        // Determine package based on service type
+
+        // Map service_type to package string (assuming service_id column stores the package name)
         $service_map = [
             'Regular Cleaning' => 'Regular Cleaning',
             'Deep Cleaning' => 'Deep Cleaning',
@@ -57,32 +63,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'Carpet Cleaning' => 'Carpet Cleaning',
             'Window Cleaning' => 'Window Cleaning'
         ];
-        $service = $service_map[$service_type] ?? 'Basic Clean';
-        
-        // Extract location from address (first part before comma)
-        $location_parts = explode(',', $address);
-        $location = trim($location_parts[0]);
-        
-        // Insert booking into bookings table (completed = 0 for pending)
-        $stmt = $pdo->prepare("INSERT INTO bookings (customer_id, cleaner_id, service, location, price, booking_date, completed) 
-                               VALUES (:customer_id, :cleaner_id, :service, :location, :price, :booking_date, 0)");
+        $service = $service_map[$service_type] ?? 'Basic Clean'; // This holds the service name string
+
+        $location = trim(explode(',', $address)[0] ?? $address);
+
+        // Insert booking
+        $stmt = $pdo->prepare("
+            INSERT INTO bookings (customer_id, cleaner_id, service_id, location, price, booking_date, status)
+            VALUES (:customer_id, :cleaner_id, :service_id, :location, :price, :booking_date, 'pending')
+            ");
+        // *** FIX: Changed :package (in SQL) to :service to match the execute array key.
+        // *** FIX: Changed the binding value from $service_id (undefined) to $service (the defined package name).
         $stmt->execute([
             ':customer_id' => $customer_id,
             ':cleaner_id' => $cleaner_id,
-            ':service' => $service,
+            ':service_id' => $service, 
             ':location' => $location,
             ':price' => $price,
-            ':booking_date' => $date
+            ':booking_date' => $date . ' ' . $time
         ]);
-        
+
         $_SESSION['flash_message'] = "Booking created successfully! We'll contact you soon.";
         $_SESSION['flash_type'] = "success";
         header('Location: ../dashboards/client.php');
         exit;
-        
+
     } catch (PDOException $e) {
-        $error_message = "Error creating booking. Please try again.";
-        error_log("Booking error: " . $e->getMessage());
+        $error_message = "Database error: " . $e->getMessage();
+    } catch (Exception $e) {
+        $error_message = $e->getMessage();
     }
 }
 ?>
@@ -169,7 +178,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </div>
                     </div>
 
-                    <div style="margin-bottom: 20px;">
+                   <!-- <div style="margin-bottom: 20px;">
                         <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">Preferred Cleaner (Optional)</label>
                         <select name="cleaner_id" id="cleaner_id" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
                             <option value="">-- Any Available Cleaner --</option>
@@ -177,7 +186,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <option value="<?= $cleaner['id'] ?>"><?= htmlspecialchars($cleaner['name']) ?></option>
                             <?php endforeach; ?>
                         </select>
-                    </div>
+                    </div>-->
 
                     <div style="margin-bottom: 20px;">
                         <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">Service Address *</label>

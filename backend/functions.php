@@ -2,6 +2,287 @@
 // backend/functions.php
 // Reusable helper functions
 
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+
+// Autoload PHPMailer
+if (file_exists('../vendor/autoload.php')) {
+    require_once '../vendor/autoload.php';
+} else {
+    require_once '../vendor/phpmailer/PHPMailer.php';
+    require_once '../vendor/phpmailer/SMTP.php';
+    require_once '../vendor/phpmailer/Exception.php';
+}
+
+require_once 'email_config.php';
+
+/**
+ * Send email using PHPMailer
+ */
+function sendEmail($to, $toName, $subject, $htmlMessage) {
+    $mail = new PHPMailer(true);
+    
+    try {
+        // Server settings
+        $mail->isSMTP();
+        $mail->Host       = SMTP_HOST;
+        $mail->SMTPAuth   = true;
+        $mail->Username   = SMTP_USERNAME;
+        $mail->Password   = SMTP_PASSWORD;
+        $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+        $mail->Port       = SMTP_PORT;
+        
+        // Recipients
+        $mail->setFrom(SMTP_FROM_EMAIL, SMTP_FROM_NAME);
+        $mail->addAddress($to, $toName);
+        
+        // Content
+        $mail->isHTML(true);
+        $mail->Subject = $subject;
+        $mail->Body    = $htmlMessage;
+        $mail->AltBody = strip_tags($htmlMessage); // Plain text version
+        
+        $mail->send();
+        return true;
+    } catch (Exception $e) {
+        error_log("Email Error: {$mail->ErrorInfo}");
+        return false;
+    }
+}
+
+/**
+ * Send booking confirmation email to customer
+ */
+function sendBookingConfirmationEmail($customer_email, $customer_name, $booking_id, $service_name, $booking_date, $location, $price) {
+    $subject = "Booking Confirmation - CleanCare #$booking_id";
+    
+    $message = "
+    <html>
+    <head>
+        <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: #2c5aa0; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+            .content { background: #f8f9fa; padding: 30px; }
+            .booking-details { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; }
+            .detail-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; }
+            .footer { text-align: center; padding: 20px; color: #666; font-size: 0.9rem; }
+            .btn { background: #2c5aa0; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; display: inline-block; margin-top: 20px; }
+        </style>
+    </head>
+    <body>
+        <div class='container'>
+            <div class='header'>
+                <h1 style='margin: 0;'>🎉 Booking Confirmed!</h1>
+            </div>
+            <div class='content'>
+                <p>Dear <strong>$customer_name</strong>,</p>
+                <p>Thank you for booking with CleanCare! Your booking has been confirmed.</p>
+                
+                <div class='booking-details'>
+                    <h3 style='color: #2c5aa0; margin-top: 0;'>Booking Details</h3>
+                    <div class='detail-row'>
+                        <span><strong>Booking ID:</strong></span>
+                        <span>#$booking_id</span>
+                    </div>
+                    <div class='detail-row'>
+                        <span><strong>Service:</strong></span>
+                        <span>$service_name</span>
+                    </div>
+                    <div class='detail-row'>
+                        <span><strong>Date:</strong></span>
+                        <span>$booking_date</span>
+                    </div>
+                    <div class='detail-row'>
+                        <span><strong>Location:</strong></span>
+                        <span>$location</span>
+                    </div>
+                    <div class='detail-row'>
+                        <span><strong>Price:</strong></span>
+                        <span><strong>R" . number_format($price, 2) . "</strong></span>
+                    </div>
+                </div>
+                
+                <p><strong>What's Next?</strong></p>
+                <ul>
+                    <li>We will assign a cleaner to your booking shortly</li>
+                    <li>You will receive a notification once a cleaner is assigned</li>
+                    <li>You can track your booking status in your dashboard</li>
+                </ul>
+            </div>
+            <div class='footer'>
+                <p>&copy; 2025 CleanCare. All rights reserved.</p>
+                <p>Need help? Contact us at " . SMTP_FROM_EMAIL . "</p>
+            </div>
+        </div>
+    </body>
+    </html>
+    ";
+    
+    return sendEmail($customer_email, $customer_name, $subject, $message);
+}
+
+/**
+ * Send cleaner assignment notification email
+ */
+function sendCleanerAssignedNotification($cleaner_email, $cleaner_name, $service_id, $booking_date) {
+    $service_names = [
+        1 => 'Regular Cleaning',
+        2 => 'Deep Cleaning',
+        3 => 'Move In/Out Cleaning',
+        4 => 'Office Cleaning',
+        5 => 'Carpet Cleaning',
+        6 => 'Window Cleaning'
+    ];
+    $service_name = $service_names[$service_id] ?? "Service #$service_id";
+    
+    $subject = "New Job Assignment - CleanCare";
+    
+    $message = "
+    <html>
+    <head>
+        <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: #28a745; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+            .content { background: #f8f9fa; padding: 30px; }
+            .job-details { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; }
+            .btn { background: #28a745; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; display: inline-block; margin-top: 20px; }
+            .footer { text-align: center; padding: 20px; color: #666; font-size: 0.9rem; }
+        </style>
+    </head>
+    <body>
+        <div class='container'>
+            <div class='header'>
+                <h1 style='margin: 0;'>👷 New Job Assignment</h1>
+            </div>
+            <div class='content'>
+                <p>Hi <strong>$cleaner_name</strong>,</p>
+                <p>You have been assigned to a new cleaning job!</p>
+                
+                <div class='job-details'>
+                    <h3 style='color: #28a745; margin-top: 0;'>Job Details</h3>
+                    <p><strong>Service:</strong> $service_name</p>
+                    <p><strong>Date:</strong> $booking_date</p>
+                </div>
+                
+                <p>Please log in to your dashboard to view complete job details including customer contact information and location.</p>
+            </div>
+            <div class='footer'>
+                <p>&copy; 2025 CleanCare. All rights reserved.</p>
+            </div>
+        </div>
+    </body>
+    </html>
+    ";
+    
+    return sendEmail($cleaner_email, $cleaner_name, $subject, $message);
+}
+
+/**
+ * Send job completion notification to admin
+ */
+function sendJobCompletionNotification($admin_email, $cleaner_name, $booking_id) {
+    $subject = "Job Completed - Awaiting Confirmation #$booking_id";
+    
+    $message = "
+    <html>
+    <head>
+        <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: #FFC107; color: #333; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+            .content { background: #f8f9fa; padding: 30px; }
+            .alert { background: #fff3cd; border-left: 4px solid #FFC107; padding: 15px; margin: 20px 0; }
+            .btn { background: #2c5aa0; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; display: inline-block; margin-top: 20px; }
+            .footer { text-align: center; padding: 20px; color: #666; font-size: 0.9rem; }
+        </style>
+    </head>
+    <body>
+        <div class='container'>
+            <div class='header'>
+                <h1 style='margin: 0;'>⏳ Job Awaiting Confirmation</h1>
+            </div>
+            <div class='content'>
+                <p>Hello Admin,</p>
+                
+                <div class='alert'>
+                    <p style='margin: 0;'><strong>$cleaner_name</strong> has marked booking <strong>#$booking_id</strong> as complete.</p>
+                </div>
+                
+                <p>Please review and confirm the completion of this booking.</p>
+                
+                <p><strong>Action Required:</strong></p>
+                <ul>
+                    <li>Review the booking details</li>
+                    <li>Verify job completion</li>
+                    <li>Confirm or follow up as needed</li>
+                </ul>
+            </div>
+            <div class='footer'>
+                <p>&copy; 2025 CleanCare. All rights reserved.</p>
+            </div>
+        </div>
+    </body>
+    </html>
+    ";
+    
+    return sendEmail($admin_email, 'Admin', $subject, $message);
+}
+
+/**
+ * Send booking completed email to customer
+ */
+function sendBookingCompletedEmail($customer_email, $customer_name, $booking_id) {
+    $subject = "Service Completed - CleanCare #$booking_id";
+    
+    $message = "
+    <html>
+    <head>
+        <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: #28a745; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+            .content { background: #f8f9fa; padding: 30px; }
+            .success-box { background: #d4edda; border-left: 4px solid #28a745; padding: 20px; margin: 20px 0; }
+            .btn { background: #FFC107; color: #333; padding: 12px 30px; text-decoration: none; border-radius: 6px; display: inline-block; margin-top: 20px; font-weight: bold; }
+            .footer { text-align: center; padding: 20px; color: #666; font-size: 0.9rem; }
+        </style>
+    </head>
+    <body>
+        <div class='container'>
+            <div class='header'>
+                <h1 style='margin: 0;'>✅ Service Completed!</h1>
+            </div>
+            <div class='content'>
+                <p>Dear <strong>$customer_name</strong>,</p>
+                
+                <div class='success-box'>
+                    <p style='margin: 0;'>Your booking <strong>#$booking_id</strong> has been completed successfully!</p>
+                </div>
+                
+                <p>We hope you're satisfied with our service. Your feedback is important to us!</p>
+                
+                <p><strong>📝 Please take a moment to leave a review:</strong></p>
+                <ul>
+                    <li>Share your experience</li>
+                    <li>Rate our cleaner's performance</li>
+                    <li>Help us improve our service</li>
+                </ul>
+                
+                <p style='margin-top: 30px;'>Thank you for choosing CleanCare!</p>
+            </div>
+            <div class='footer'>
+                <p>&copy; 2025 CleanCare. All rights reserved.</p>
+            </div>
+        </div>
+    </body>
+    </html>
+    ";
+    
+    return sendEmail($customer_email, $customer_name, $subject, $message);
+}
+
 /**
  * Sanitize input data
  */
@@ -169,109 +450,4 @@ function check_booking_availability($cleaner_id, $date, $time, $pdo) {
     }
 }
 
-// ====================================================================
-// NEW: Notification & Email Helpers
-// ====================================================================
-
-/**
- * NEW: Saves a notification to the database (using your schema)
- */
-function save_user_notification($userId, $userRole, $message) {
-    global $pdo;
-    try {
-        $sql = "INSERT INTO notifications (user_id, user_role, message) 
-                VALUES (:user_id, :user_role, :message)";
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute([
-            ':user_id' => $userId,
-            ':user_role' => $userRole,
-            ':message' => $message
-        ]);
-        return true;
-    } catch (PDOException $e) {
-        error_log("Notification saving failed: " . $e->getMessage());
-        return false;
-    }
-}
-
-// ✅ Email notification to customer when booking is confirmed
-function sendBookingConfirmation($customerEmail, $customerName, $bookingId, $service, $date) {
-    $subject = "Booking Confirmed - CleanCare";
-    $message = "
-    Hi $customerName,<br><br>
-    Your booking <strong>#$bookingId</strong> for <strong>$service</strong> has been <strong>confirmed</strong>.<br>
-    Date: $date<br><br>
-    We’ll notify you when your cleaner is on the way!<br><br>
-    Best,<br>CleanCare Team
-    ";
-    $headers = "MIME-Version: 1.0\r\n";
-    $headers .= "Content-type:text/html;charset=UTF-8\r\n";
-    $headers .= "From: CleanCare <noreply@cleancare.com>\r\n";
-    @mail($customerEmail, $subject, $message, $headers);
-    // Log the email attempt
-    log_email($customerEmail, $subject, $message);
-}
-
-// ✅ Email notification to admin when job is completed
-function sendJobCompletionNotification($adminEmail, $cleanerName, $bookingId) {
-    $subject = "Job Completed - Booking #$bookingId";
-    $message = "
-    Hello Admin,<br><br>
-    Cleaner <strong>$cleanerName</strong> has marked booking #$bookingId as completed.<br>
-    Please verify the job and process payment.<br><br>
-    Regards,<br>CleanCare System
-    ";
-    $headers = "MIME-Version: 1.0\r\n";
-    $headers .= "Content-type:text/html;charset=UTF-8\r\n";
-    $headers .= "From: CleanCare <noreply@cleancare.com>\r\n";
-    @mail($adminEmail, $subject, $message, $headers);
-    // Log the email attempt
-    log_email($adminEmail, $subject, $message);
-}
-
-// ✅ Notification when admin assigns a cleaner
-function sendCleanerAssignedNotification($cleanerEmail, $cleanerName, $service, $date) {
-    $subject = "New Job Assigned - CleanCare";
-    $message = "
-    Hi $cleanerName,<br><br>
-    You’ve been assigned a new cleaning job.<br><br>
-    Service: <strong>$service</strong><br>
-    Date: <strong>$date</strong><br><br>
-    Please check your dashboard for full details.<br><br>
-    Regards,<br>CleanCare System
-    ";
-    $headers = "MIME-Version: 1.0\r\n";
-    $headers .= "Content-type:text/html;charset=UTF-8\r\n";
-    $headers .= "From: CleanCare <noreply@cleancare.com>\r\n";
-    @mail($cleanerEmail, $subject, $message, $headers);
-    // Log the email attempt
-    log_email($cleanerEmail, $subject, $message);
-}
-
-// NEW: Function to log emails into your email_logs table
-function log_email($recipientEmail, $subject, $message) {
-    global $pdo;
-    try {
-        $stmt = $pdo->prepare("INSERT INTO email_logs (recipient_email, subject, message) 
-                               VALUES (:email, :subject, :message)");
-        $stmt->execute([
-            ':email' => $recipientEmail,
-            ':subject' => $subject,
-            ':message' => $message
-        ]);
-    } catch (PDOException $e) {
-        error_log("Email log error: " . $e->getMessage());
-    }
-}
-
-
-// Placeholder functions removed for better file separation:
-// Removed: function submitReview(...) -> now in review_api.php
-// Removed: function displayNotification(...) -> now handled by the notification table
-// Removed: function send_notification (deprecated, use dedicated email functions)
-
-function displayNotification($message, $type = 'info') {
-    // Left this here as it was in your file, but recommend removing for a full notification API
-    echo "<div class='notification notification-$type'>$message</div>";
-}
 ?>

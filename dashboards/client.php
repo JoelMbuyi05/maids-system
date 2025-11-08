@@ -9,7 +9,7 @@ if ($user_role !== 'customer') {
     exit;
 }
 
-// Get customer_id from customers table using email
+// CRITICAL FIX: Get customer_id FIRST before using it
 try {
     $stmt = $pdo->prepare("SELECT id FROM customers WHERE email = :email");
     $stmt->execute([':email' => $user_email]);
@@ -23,8 +23,27 @@ try {
     } else {
         $customer_id = $customer['id'];
     }
-    
-    // Fetch user's bookings using customer_id from customers table
+} catch (PDOException $e) {
+    error_log("Customer creation error: " . $e->getMessage());
+    die("Error setting up customer account. Please contact support.");
+}
+
+// NOW fetch notifications (after $customer_id is set)
+try {
+    $stmt = $pdo->prepare("SELECT * FROM notifications 
+                          WHERE user_role = 'customer' 
+                          AND user_id = :user_id
+                          AND is_read = 0 
+                          ORDER BY created_at DESC 
+                          LIMIT 10");
+    $stmt->execute([':user_id' => $customer_id]);
+    $customer_notifications = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    $customer_notifications = [];
+}
+
+// Fetch user's bookings using customer_id from customers table
+try {
     $stmt = $pdo->prepare("SELECT b.*, e.name as cleaner_name, e.phone as cleaner_phone
                            FROM bookings b 
                            LEFT JOIN employees e ON b.cleaner_id = e.id 
@@ -37,8 +56,9 @@ try {
     // Get booking statistics
     $stmt = $pdo->prepare("SELECT 
                            COUNT(*) as total,
-                           SUM(CASE WHEN completed = 0 THEN 1 ELSE 0 END) as pending,
-                           SUM(CASE WHEN completed = 1 THEN 1 ELSE 0 END) as completed
+                           SUM(CASE WHEN status = 'completed' OR completed = 1 THEN 1 ELSE 0 END) as completed,
+                           SUM(CASE WHEN status != 'completed' AND status != 'cancelled' AND completed = 0 THEN 1 ELSE 0 END) as pending,
+                           SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) as cancelled
                            FROM bookings WHERE customer_id = :customer_id");
     $stmt->execute([':customer_id' => $customer_id]);
     $stats = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -46,7 +66,7 @@ try {
 } catch (PDOException $e) {
     error_log("Dashboard error: " . $e->getMessage());
     $bookings = [];
-    $stats = ['total' => 0, 'pending' => 0, 'completed' => 0];
+    $stats = ['total' => 0, 'pending' => 0, 'completed' => 0, 'cancelled' => 0];
 }
 ?>
 <!DOCTYPE html>
@@ -100,6 +120,18 @@ try {
         <div class="container">
             <?php display_flash_message(); ?>
             
+            <?php if (!empty($customer_notifications)): ?>
+            <div style="background: #d4edda; border-left: 4px solid #28a745; padding: 20px; border-radius: 8px; margin-bottom: 30px;">
+                <h3 style="margin-top: 0; color: #155724;">🔔 New Notifications (<?= count($customer_notifications) ?>)</h3>
+                <?php foreach ($customer_notifications as $notif): ?>
+                    <div style="background: white; padding: 15px; border-radius: 6px; margin-bottom: 10px;">
+                        <p style="margin: 0; color: #333;"><?= htmlspecialchars($notif['message']) ?></p>
+                        <small style="color: #999;"><?= date('M j, g:i a', strtotime($notif['created_at'])) ?></small>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+            <?php endif; ?>
+
             <h2 style="color: #2c5aa0; margin-bottom: 30px;">Client Dashboard</h2>
             
             <!-- Statistics Cards -->
@@ -115,6 +147,10 @@ try {
                 <div style="background: white; padding: 25px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); border-left: 4px solid #28a745;">
                     <h3 style="color: #666; font-size: 0.9rem; margin-bottom: 10px;">Completed</h3>
                     <p style="font-size: 2rem; color: #28a745; font-weight: 700; margin: 0;"><?= $stats['completed'] ?></p>
+                </div>
+                <div style="background: white; padding: 25px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); border-left: 4px solid #dc3545;">
+                    <h3 style="color: #666; font-size: 0.9rem; margin-bottom: 10px;">Cancelled</h3>
+                    <p style="font-size: 2rem; color: #dc3545; font-weight: 700; margin: 0;"><?= $stats['cancelled'] ?></p>
                 </div>
             </div>
 
@@ -155,12 +191,30 @@ try {
                             </thead>
                             <tbody>
                                 <?php foreach ($bookings as $booking): 
-                                    $status = $booking['completed'] ? 'completed' : 'pending';
-                                    $status_color = $booking['completed'] ? '#28a745' : '#FFC107';
+                                    // Determine status
+                                    $status = $booking['status'] ?? ($booking['completed'] ? 'completed' : 'pending');
+                                    
+                                    $status_colors = [
+                                        'pending' => '#FFC107',
+                                        'confirmed' => '#17a2b8',
+                                        'completed_by_cleaner' => '#6c757d',
+                                        'completed' => '#28a745',
+                                        'cancelled' => '#dc3545'
+                                    ];
+                                    $status_color = $status_colors[$status] ?? '#FFC107';
+                                    
+                                    $status_labels = [
+                                        'pending' => 'Pending',
+                                        'confirmed' => 'Confirmed',
+                                        'completed_by_cleaner' => 'Awaiting Review',
+                                        'completed' => 'Completed',
+                                        'cancelled' => 'Cancelled'
+                                    ];
+                                    $status_label = $status_labels[$status] ?? 'Pending';
                                 ?>
                                 <tr style="border-bottom: 1px solid #dee2e6;">
                                     <td style="padding: 12px;">#<?= $booking['id'] ?></td>
-                                    <td style="padding: 12px;"><?= htmlspecialchars($booking['service']) ?></td>
+                                    <td style="padding: 12px;"><?= htmlspecialchars($booking['service_id']) ?></td>
                                     <td style="padding: 12px;"><?= date('d M Y', strtotime($booking['booking_date'])) ?></td>
                                     <td style="padding: 12px;"><?= htmlspecialchars($booking['location']) ?></td>
                                     <td style="padding: 12px;">
@@ -173,7 +227,7 @@ try {
                                     </td>
                                     <td style="padding: 12px;">
                                         <span style="background: <?= $status_color ?>; color: white; padding: 4px 12px; border-radius: 12px; font-size: 0.85rem; font-weight: 600;">
-                                            <?= ucfirst($status) ?>
+                                            <?= $status_label ?>
                                         </span>
                                     </td>
                                     <td style="padding: 12px; font-weight: 600;">R<?= number_format($booking['price'], 2) ?></td>

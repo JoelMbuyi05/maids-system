@@ -241,7 +241,11 @@ $bookings = $stmt->fetchAll(PDO::FETCH_ASSOC);
             background: #f8f9fa;
             border-bottom: 2px solid #dee2e6;
         }
-        .data-table th { padding: 12px; text-align: left; font-weight: 600; }
+        .data-table th { 
+            padding: 12px; 
+            text-align: left; 
+            font-weight: 600; 
+        }
         .data-table td { padding: 12px; border-bottom: 1px solid #dee2e6; }
         .data-table td:last-child {
             padding-right: 5px;
@@ -434,7 +438,7 @@ $bookings = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                         <th>ID</th>
                                         <th>Customer</th>
                                         <th>Employee</th>
-                                        <th>Package</th>
+                                        <th>Service</th>
                                         <th>Location</th>
                                         <th>Date</th>
                                         <th>Price</th>
@@ -448,7 +452,7 @@ $bookings = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                         <td><?= $booking['id'] ?></td>
                                         <td><?= htmlspecialchars($booking['customer_name'] ?? 'N/A') ?></td>
                                         <td><?= htmlspecialchars($booking['employee_name'] ?? 'Unassigned') ?></td>
-                                        <td><?= htmlspecialchars($booking['package']) ?></td>
+                                        <td><?= htmlspecialchars($booking['service_id']) ?></td>
                                         <td><?= htmlspecialchars($booking['location']) ?></td>
                                         <td><?= date('d M Y', strtotime($booking['booking_date'])) ?></td>
                                         <td>R<?= number_format($booking['price'], 2) ?></td>

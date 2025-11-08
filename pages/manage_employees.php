@@ -171,7 +171,10 @@ try {
             padding: 20px 40px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.08);
         }
-        .admin-content { padding: 40px; }
+        .admin-content { 
+            padding: 40px 10px; 
+            
+        }
         
         .form-card {
             background: white;
@@ -246,6 +249,10 @@ try {
         .btn-edit:hover { background: #218838; }
         .btn-delete { background: #dc3545; }
         .btn-delete:hover { background: #c82333; }
+        .action-buttons {
+            white-space: nowrap; 
+            display: block; 
+        }
         .stat-badge {
             background: #e3f2fd;
             color: #2c5aa0;
@@ -364,7 +371,6 @@ try {
                                     <tr>
                                         <th>ID</th>
                                         <th>Name</th>
-                                        <th>Emp Number</th>
                                         <th>Email</th>
                                         <th>Phone</th>
                                         <th>Bookings</th>
@@ -387,10 +393,12 @@ try {
                                             R<?= number_format($employee['total_paid'], 2) ?>
                                         </td>
                                         <td>
-                                            <button class="btn-action btn-edit" onclick="openEditModal(<?= htmlspecialchars(json_encode($employee)) ?>)">Edit</button>
-                                            <a href="?delete=<?= $employee['id'] ?>" 
-                                               class="btn-action btn-delete" 
-                                               onclick="return confirm('Delete this employee?')">Delete</a>
+                                            <div class="action-buttons">
+                                                <button class="btn-action btn-edit" onclick="openEditModal(<?= htmlspecialchars(json_encode($employee)) ?>)">Edit</button>
+                                                <a href="?delete=<?= $employee['id'] ?>" 
+                                                class="btn-action btn-delete" 
+                                                onclick="return confirm('Delete this employee?')">Delete</a>
+                                            </div>
                                         </td>
                                     </tr>
                                     <?php endforeach; ?>

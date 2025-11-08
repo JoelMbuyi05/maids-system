@@ -9,6 +9,19 @@ if ($user_role !== 'admin') {
     exit;
 }
 
+// Fetch unread notifications for admin
+try {
+    $stmt = $pdo->prepare("SELECT * FROM notifications 
+                          WHERE user_role = 'admin' 
+                          AND is_read = 0 
+                          ORDER BY created_at DESC 
+                          LIMIT 10");
+    $stmt->execute();
+    $admin_notifications = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    $admin_notifications = [];
+}
+
 // Handle user deletion (Existing logic - kept for completeness)
 if (isset($_GET['delete_user']) && isset($_GET['user_id'])) {
     $user_id_to_delete = intval($_GET['user_id']);
@@ -506,6 +519,21 @@ try {
             <div class="admin-content">
                 <?php display_flash_message(); ?>
                 
+                <?php if (!empty($admin_notifications)): ?>
+                <div style="background: #fff3cd; border-left: 4px solid #FFC107; padding: 20px; border-radius: 8px; margin-bottom: 30px;">
+                    <h3 style="margin-top: 0; color: #856404;">🔔 New Notifications (<?= count($admin_notifications) ?>)</h3>
+                    <?php foreach ($admin_notifications as $notif): ?>
+                        <div style="background: white; padding: 15px; border-radius: 6px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <p style="margin: 0; color: #333;"><?= htmlspecialchars($notif['message']) ?></p>
+                                <small style="color: #999;"><?= date('M j, g:i a', strtotime($notif['created_at'])) ?></small>
+                            </div>
+                            <a href="?mark_read=<?= $notif['id'] ?>" style="background: #28a745; color: white; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 0.85rem;">Mark Read</a>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+                <?php endif; ?>
+
                 <div class="stats-grid">
                     <div class="stat-card">
                         <h3>Total Bookings</h3>
@@ -549,7 +577,7 @@ try {
                                     <th>ID</th>
                                     <th>Customer</th>
                                     <th>Employee</th>
-                                    <th>Package</th>
+                                    <th>Service</th>
                                     <th>Location</th>
                                     <th>Date</th>
                                     <th>Price</th>
@@ -563,7 +591,7 @@ try {
                                     <td>#<?= $booking['id'] ?></td>
                                     <td><?= htmlspecialchars($booking['customer_name']) ?></td>
                                     <td><?= htmlspecialchars($booking['employee_name']) ?></td>
-                                    <td><?= htmlspecialchars($booking['package']) ?></td>
+                                    <td><?= htmlspecialchars($booking['service_id']) ?></td>
                                     <td><?= htmlspecialchars($booking['location']) ?></td>
                                     <td>
                                         <?php

@@ -179,7 +179,7 @@ try {
         
         .data-table-container {
             background: white;
-            padding: 30px;
+            padding: 10px;
             border-radius: 12px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.08);
         }
@@ -194,7 +194,7 @@ try {
         }
         .data-table th { padding: 12px; text-align: left; font-weight: 600; }
         .data-table td { padding: 12px; border-bottom: 1px solid #dee2e6; }
-        .data-table td:nth-child(6) {
+        .data-table td:nth-child(6){
             min-width: 100px;
             white-space: nowrap;
         }
