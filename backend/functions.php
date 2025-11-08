@@ -32,8 +32,16 @@ function sendEmail($to, $toName, $subject, $htmlMessage) {
         $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
         $mail->Port       = SMTP_PORT;
         
+        $mail->SMTPOptions = [
+            'ssl' => [
+                'verify_peer' => false,
+                'verify_peer_name' => false,
+                'allow_self_signed' => true,
+            ],
+        ];
+
         // Recipients
-        $mail->setFrom(SMTP_FROM_EMAIL, SMTP_FROM_NAME);
+        $mail->setFrom(SMTP_USERNAME, 'Cleancare');
         $mail->addAddress($to, $toName);
         
         // Content
