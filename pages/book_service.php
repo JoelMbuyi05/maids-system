@@ -15,7 +15,7 @@ $user_email = $_SESSION['user_email'];
 $user_role = $_SESSION['user_role'];
 
 // Helper function to save notifications
-function save_notification($pdo, $user_id, $user_role, $message) {
+/*function save_notification($pdo, $user_id, $user_role, $message) {
     try {
         $stmt = $pdo->prepare("INSERT INTO notifications (user_id, user_role, message, is_read) 
                               VALUES (:user_id, :user_role, :message, 0)");
@@ -29,7 +29,7 @@ function save_notification($pdo, $user_id, $user_role, $message) {
         error_log("Notification error: " . $e->getMessage());
         return false;
     }
-}
+}*/
 
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -117,7 +117,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
         // Notify admin about new booking
-        save_notification($pdo, 1, 'admin', "New booking #{$booking_id} from {$user_name} - {$service} on " . date('M j, Y', strtotime($date)));
+        save_notification(1, 'admin', "New booking #{$booking_id} from {$user_name} - {$service} on " . date('M j, Y', strtotime($date)));
 
         $_SESSION['flash_message'] = "🎉 Booking created successfully! Confirmation email sent to {$user_email}";
         $_SESSION['flash_type'] = "success";

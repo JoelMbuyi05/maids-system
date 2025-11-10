@@ -139,7 +139,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     <button type="submit" class="btn-submit-compact">Sign In</button>
 
                     <div class="text-center" style="margin-top: 12px;">
-                        <a href="#" class="forgot-link">Forgot Password?</a>
+                        <a href="pages/forgot_password.php" class="forgot-link">Forgot Password?</a>
                     </div>
                 </form>
 
@@ -149,13 +149,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     <a href="register.php" class="btn-create-account-compact">Create New Account</a>
                 </div>
                 
-                <!-- Demo Credentials Info 
-                <div style="margin-top: 20px; padding: 15px; background: #f0f8ff; border-radius: 8px; font-size: 0.85rem; color: #2c5aa0;">
-                    <strong>🧪 Demo Accounts:</strong><br>
-                    Admin: admin@cleancare.com / admin123<br>
-                    Cleaner: sarah@cleancare.com / cleaner123<br>
-                    Customer: john@example.com / customer123
-                </div>-->
             </div>
         </div>
     </section>

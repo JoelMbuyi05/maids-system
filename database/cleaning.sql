@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1:3307
--- Generation Time: Nov 09, 2025 at 02:55 PM
+-- Generation Time: Nov 10, 2025 at 12:10 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -88,7 +88,7 @@ CREATE TABLE `bookings` (
   `cleaner` varchar(100) NOT NULL,
   `inventory_log` tinyint(1) DEFAULT 0,
   `inventory_deducted` tinyint(1) DEFAULT 0,
-  `status` enum('pending','assigned','in_progress','completed','cancelled') DEFAULT 'pending',
+  `status` enum('pending','assigned','in_progress','completed_by_cleaner','completed','cancelled') DEFAULT 'pending',
   `payment_status` enum('unpaid','paid','refunded','partial_refund') DEFAULT 'unpaid',
   `cancelled_at` datetime DEFAULT NULL,
   `cancellation_reason` text DEFAULT NULL,
@@ -103,12 +103,8 @@ CREATE TABLE `bookings` (
 --
 
 INSERT INTO `bookings` (`id`, `customer_id`, `cleaner_id`, `service_id`, `price`, `date_booked`, `location`, `completed`, `booking_date`, `customer`, `cleaner`, `inventory_log`, `inventory_deducted`, `status`, `payment_status`, `cancelled_at`, `cancellation_reason`, `completed_by_cleaner_at`, `completed_by_admin_at`, `review`, `rating`) VALUES
-(15, 10, 13, 'Regular Cleaning', 500.00, '0000-00-00', '20 education street', 0, '2025-11-10', '', '', 0, 0, 'cancelled', 'unpaid', '2025-11-08 21:57:23', 'I made a wrong order. Thanks', NULL, NULL, NULL, NULL),
-(16, 10, 13, 'Deep Cleaning', 1200.00, '0000-00-00', '20 petrusa street', 0, '2025-11-15', '', '', 0, 0, '', 'unpaid', NULL, NULL, '2025-11-08 23:20:35', NULL, NULL, NULL),
-(19, 10, 13, 'Regular Cleaning', 500.00, '0000-00-00', '13 education street', 0, '2025-11-12', '', '', 0, 0, '', 'unpaid', NULL, NULL, NULL, NULL, NULL, NULL),
-(20, 10, NULL, 'Carpet Cleaning', 600.00, '0000-00-00', '21 pertunia street', 0, '2025-11-15', '', '', 0, 0, 'cancelled', 'unpaid', '2025-11-09 15:18:13', 'i booked by mistake. Thanks', NULL, NULL, NULL, NULL),
-(21, 10, NULL, 'Carpet Cleaning', 600.00, '0000-00-00', '21 pertunia street', 0, '2025-11-15', '', '', 0, 0, 'cancelled', 'unpaid', '2025-11-09 15:16:07', 'I booked by mistake', NULL, NULL, NULL, NULL),
-(22, 10, NULL, 'Carpet Cleaning', 600.00, '0000-00-00', '6 education street', 0, '2025-11-15', '', '', 0, 0, 'pending', 'unpaid', NULL, NULL, NULL, NULL, NULL, NULL);
+(25, 10, 13, 'Regular Cleaning', 500.00, '0000-00-00', '13 education street', 1, '2025-11-20', '', '', 0, 0, 'completed', 'unpaid', NULL, NULL, '2025-11-10 10:02:34', '2025-11-10 10:03:30', NULL, NULL),
+(28, 10, NULL, 'Office Cleaning', 800.00, '0000-00-00', '21 pertunia street', 0, '2025-12-10', '', '', 0, 0, 'pending', 'unpaid', NULL, NULL, NULL, NULL, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -174,7 +170,7 @@ CREATE TABLE `customers` (
 INSERT INTO `customers` (`id`, `name`, `email`, `phone`, `address`) VALUES
 (1, 'Keziah Naidu', 'keziahnaidu01@gmail.com', '0649077015', NULL),
 (5, 'Eden Kabamba', 'edenkabamba@gmail.com', '', '13 education street, belhar'),
-(10, 'Joel Mbuyi', 'joelmbuyi700@gmail.com', '', '6 education street, belhar'),
+(10, 'Joel Mbuyi', 'joelmbuyi700@gmail.com', '', '21 pertunia street, belhar'),
 (11, 'Pertunia Shivuri', 'pertunia@gmail.com', '084 57 41 272', '13 educatio street, belhar');
 
 -- --------------------------------------------------------
@@ -197,7 +193,9 @@ CREATE TABLE `email_logs` (
 
 INSERT INTO `email_logs` (`id`, `recipient_email`, `subject`, `message`, `sent_at`) VALUES
 (1, 'joelmbuyi700@gmail.com', 'Booking Confirmation - CleanCare', '\r\n        <html>\r\n        <body style=\'font-family: Arial, sans-serif; line-height: 1.6; color: #333;\'>\r\n            <div style=\'max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;\'>\r\n                <div style=\'text-align: center; margin-bottom: 30px;\'>\r\n                    <h1 style=\'color: #2c5aa0;\'>CleanCare</h1>\r\n                </div>\r\n                \r\n                <h2 style=\'color: #2c5aa0;\'>Booking Confirmation</h2>\r\n                \r\n                <p>Dear <strong>Joel Mbuyi</strong>,</p>\r\n                \r\n                <p>Thank you for choosing CleanCare! Your booking has been <strong>confirmed</strong>.</p>\r\n                \r\n                <div style=\'background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;\'>\r\n                    <h3 style=\'margin-top: 0; color: #2c5aa0;\'>Booking Details</h3>\r\n                    <table style=\'width: 100%;\'>\r\n                        <tr>\r\n                            <td style=\'padding: 8px 0;\'><strong>Booking ID:</strong></td>\r\n                            <td style=\'padding: 8px 0;\'>#21</td>\r\n                        </tr>\r\n                        <tr>\r\n                            <td style=\'padding: 8px 0;\'><strong>Service:</strong></td>\r\n                            <td style=\'padding: 8px 0;\'>Carpet Cleaning</td>\r\n                        </tr>\r\n                        <tr>\r\n                            <td style=\'padding: 8px 0;\'><strong>Date & Time:</strong></td>\r\n                            <td style=\'padding: 8px 0;\'>Saturday, November 15, 2025 at 12:00 PM</td>\r\n                        </tr>\r\n                        <tr>\r\n                            <td style=\'padding: 8px 0;\'><strong>Location:</strong></td>\r\n                            <td style=\'padding: 8px 0;\'>21 pertunia street</td>\r\n                        </tr>\r\n                        <tr>\r\n                            <td style=\'padding: 8px 0;\'><strong>Price:</strong></td>\r\n                            <td style=\'padding: 8px 0; font-size: 1.2em; color: #2c5aa0;\'><strong>R600.00</strong></td>\r\n                        </tr>\r\n                    </table>\r\n                </div>\r\n                \r\n                <div style=\'background: #e7f3ff; padding: 15px; border-radius: 8px; margin: 20px 0;\'>\r\n                    <p style=\'margin: 0;\'><strong>📋 What\'s Next?</strong></p>\r\n                    <ol style=\'margin: 10px 0 0 0; padding-left: 20px;\'>\r\n                        <li>We\'ll assign a cleaner to your booking</li>\r\n                        <li>You\'ll receive updates via email and in-app notifications</li>\r\n                        <li>Our cleaner will arrive on the scheduled date</li>\r\n                        <li>After completion, you can leave a review</li>\r\n                    </ol>\r\n                </div>\r\n                \r\n                <p>You can view and manage your booking anytime by logging into your account.</p>\r\n                \r\n                <hr style=\'border: none; border-top: 1px solid #ddd; margin: 30px 0;\'>\r\n                \r\n                <p style=\'font-size: 0.9em; color: #666;\'>\r\n                    If you have any questions, please contact us at support@cleancare.com\r\n                </p>\r\n                \r\n                <p style=\'font-size: 0.9em; color: #666;\'>\r\n                    Best regards,<br>\r\n                    <strong>The CleanCare Team</strong>\r\n                </p>\r\n            </div>\r\n        </body>\r\n        </html>\r\n        ', '2025-11-09 11:15:14'),
-(2, 'joelmbuyi700@gmail.com', 'Booking Confirmation - CleanCare', '\r\n        <html>\r\n        <body style=\'font-family: Arial, sans-serif; line-height: 1.6; color: #333;\'>\r\n            <div style=\'max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;\'>\r\n                <div style=\'text-align: center; margin-bottom: 30px;\'>\r\n                    <h1 style=\'color: #2c5aa0;\'>CleanCare</h1>\r\n                </div>\r\n                \r\n                <h2 style=\'color: #2c5aa0;\'>Booking Confirmation</h2>\r\n                \r\n                <p>Dear <strong>Joel Mbuyi</strong>,</p>\r\n                \r\n                <p>Thank you for choosing CleanCare! Your booking has been <strong>confirmed</strong>.</p>\r\n                \r\n                <div style=\'background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;\'>\r\n                    <h3 style=\'margin-top: 0; color: #2c5aa0;\'>Booking Details</h3>\r\n                    <table style=\'width: 100%;\'>\r\n                        <tr>\r\n                            <td style=\'padding: 8px 0;\'><strong>Booking ID:</strong></td>\r\n                            <td style=\'padding: 8px 0;\'>#22</td>\r\n                        </tr>\r\n                        <tr>\r\n                            <td style=\'padding: 8px 0;\'><strong>Service:</strong></td>\r\n                            <td style=\'padding: 8px 0;\'>Carpet Cleaning</td>\r\n                        </tr>\r\n                        <tr>\r\n                            <td style=\'padding: 8px 0;\'><strong>Date & Time:</strong></td>\r\n                            <td style=\'padding: 8px 0;\'>Saturday, November 15, 2025 at 12:00 PM</td>\r\n                        </tr>\r\n                        <tr>\r\n                            <td style=\'padding: 8px 0;\'><strong>Location:</strong></td>\r\n                            <td style=\'padding: 8px 0;\'>6 education street</td>\r\n                        </tr>\r\n                        <tr>\r\n                            <td style=\'padding: 8px 0;\'><strong>Price:</strong></td>\r\n                            <td style=\'padding: 8px 0; font-size: 1.2em; color: #2c5aa0;\'><strong>R600.00</strong></td>\r\n                        </tr>\r\n                    </table>\r\n                </div>\r\n                \r\n                <div style=\'background: #e7f3ff; padding: 15px; border-radius: 8px; margin: 20px 0;\'>\r\n                    <p style=\'margin: 0;\'><strong>📋 What\'s Next?</strong></p>\r\n                    <ol style=\'margin: 10px 0 0 0; padding-left: 20px;\'>\r\n                        <li>We\'ll assign a cleaner to your booking</li>\r\n                        <li>You\'ll receive updates via email and in-app notifications</li>\r\n                        <li>Our cleaner will arrive on the scheduled date</li>\r\n                        <li>After completion, you can leave a review</li>\r\n                    </ol>\r\n                </div>\r\n                \r\n                <p>You can view and manage your booking anytime by logging into your account.</p>\r\n                \r\n                <hr style=\'border: none; border-top: 1px solid #ddd; margin: 30px 0;\'>\r\n                \r\n                <p style=\'font-size: 0.9em; color: #666;\'>\r\n                    If you have any questions, please contact us at support@cleancare.com\r\n                </p>\r\n                \r\n                <p style=\'font-size: 0.9em; color: #666;\'>\r\n                    Best regards,<br>\r\n                    <strong>The CleanCare Team</strong>\r\n                </p>\r\n            </div>\r\n        </body>\r\n        </html>\r\n        ', '2025-11-09 13:17:27');
+(2, 'joelmbuyi700@gmail.com', 'Booking Confirmation - CleanCare', '\r\n        <html>\r\n        <body style=\'font-family: Arial, sans-serif; line-height: 1.6; color: #333;\'>\r\n            <div style=\'max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;\'>\r\n                <div style=\'text-align: center; margin-bottom: 30px;\'>\r\n                    <h1 style=\'color: #2c5aa0;\'>CleanCare</h1>\r\n                </div>\r\n                \r\n                <h2 style=\'color: #2c5aa0;\'>Booking Confirmation</h2>\r\n                \r\n                <p>Dear <strong>Joel Mbuyi</strong>,</p>\r\n                \r\n                <p>Thank you for choosing CleanCare! Your booking has been <strong>confirmed</strong>.</p>\r\n                \r\n                <div style=\'background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;\'>\r\n                    <h3 style=\'margin-top: 0; color: #2c5aa0;\'>Booking Details</h3>\r\n                    <table style=\'width: 100%;\'>\r\n                        <tr>\r\n                            <td style=\'padding: 8px 0;\'><strong>Booking ID:</strong></td>\r\n                            <td style=\'padding: 8px 0;\'>#22</td>\r\n                        </tr>\r\n                        <tr>\r\n                            <td style=\'padding: 8px 0;\'><strong>Service:</strong></td>\r\n                            <td style=\'padding: 8px 0;\'>Carpet Cleaning</td>\r\n                        </tr>\r\n                        <tr>\r\n                            <td style=\'padding: 8px 0;\'><strong>Date & Time:</strong></td>\r\n                            <td style=\'padding: 8px 0;\'>Saturday, November 15, 2025 at 12:00 PM</td>\r\n                        </tr>\r\n                        <tr>\r\n                            <td style=\'padding: 8px 0;\'><strong>Location:</strong></td>\r\n                            <td style=\'padding: 8px 0;\'>6 education street</td>\r\n                        </tr>\r\n                        <tr>\r\n                            <td style=\'padding: 8px 0;\'><strong>Price:</strong></td>\r\n                            <td style=\'padding: 8px 0; font-size: 1.2em; color: #2c5aa0;\'><strong>R600.00</strong></td>\r\n                        </tr>\r\n                    </table>\r\n                </div>\r\n                \r\n                <div style=\'background: #e7f3ff; padding: 15px; border-radius: 8px; margin: 20px 0;\'>\r\n                    <p style=\'margin: 0;\'><strong>📋 What\'s Next?</strong></p>\r\n                    <ol style=\'margin: 10px 0 0 0; padding-left: 20px;\'>\r\n                        <li>We\'ll assign a cleaner to your booking</li>\r\n                        <li>You\'ll receive updates via email and in-app notifications</li>\r\n                        <li>Our cleaner will arrive on the scheduled date</li>\r\n                        <li>After completion, you can leave a review</li>\r\n                    </ol>\r\n                </div>\r\n                \r\n                <p>You can view and manage your booking anytime by logging into your account.</p>\r\n                \r\n                <hr style=\'border: none; border-top: 1px solid #ddd; margin: 30px 0;\'>\r\n                \r\n                <p style=\'font-size: 0.9em; color: #666;\'>\r\n                    If you have any questions, please contact us at support@cleancare.com\r\n                </p>\r\n                \r\n                <p style=\'font-size: 0.9em; color: #666;\'>\r\n                    Best regards,<br>\r\n                    <strong>The CleanCare Team</strong>\r\n                </p>\r\n            </div>\r\n        </body>\r\n        </html>\r\n        ', '2025-11-09 13:17:27'),
+(3, 'joelmbuyi700@gmail.com', 'Booking Confirmation - CleanCare', '\r\n        <html>\r\n        <body style=\'font-family: Arial, sans-serif; line-height: 1.6; color: #333;\'>\r\n            <div style=\'max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;\'>\r\n                <div style=\'text-align: center; margin-bottom: 30px;\'>\r\n                    <h1 style=\'color: #2c5aa0;\'>CleanCare</h1>\r\n                </div>\r\n                \r\n                <h2 style=\'color: #2c5aa0;\'>Booking Confirmation</h2>\r\n                \r\n                <p>Dear <strong>Joel Mbuyi</strong>,</p>\r\n                \r\n                <p>Thank you for choosing CleanCare! Your booking has been <strong>confirmed</strong>.</p>\r\n                \r\n                <div style=\'background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;\'>\r\n                    <h3 style=\'margin-top: 0; color: #2c5aa0;\'>Booking Details</h3>\r\n                    <table style=\'width: 100%;\'>\r\n                        <tr>\r\n                            <td style=\'padding: 8px 0;\'><strong>Booking ID:</strong></td>\r\n                            <td style=\'padding: 8px 0;\'>#23</td>\r\n                        </tr>\r\n                        <tr>\r\n                            <td style=\'padding: 8px 0;\'><strong>Service:</strong></td>\r\n                            <td style=\'padding: 8px 0;\'>Deep Cleaning</td>\r\n                        </tr>\r\n                        <tr>\r\n                            <td style=\'padding: 8px 0;\'><strong>Date & Time:</strong></td>\r\n                            <td style=\'padding: 8px 0;\'>Thursday, November 20, 2025 at 12:30 PM</td>\r\n                        </tr>\r\n                        <tr>\r\n                            <td style=\'padding: 8px 0;\'><strong>Location:</strong></td>\r\n                            <td style=\'padding: 8px 0;\'>13 education street</td>\r\n                        </tr>\r\n                        <tr>\r\n                            <td style=\'padding: 8px 0;\'><strong>Price:</strong></td>\r\n                            <td style=\'padding: 8px 0; font-size: 1.2em; color: #2c5aa0;\'><strong>R1,200.00</strong></td>\r\n                        </tr>\r\n                    </table>\r\n                </div>\r\n                \r\n                <div style=\'background: #e7f3ff; padding: 15px; border-radius: 8px; margin: 20px 0;\'>\r\n                    <p style=\'margin: 0;\'><strong>📋 What\'s Next?</strong></p>\r\n                    <ol style=\'margin: 10px 0 0 0; padding-left: 20px;\'>\r\n                        <li>We\'ll assign a cleaner to your booking</li>\r\n                        <li>You\'ll receive updates via email and in-app notifications</li>\r\n                        <li>Our cleaner will arrive on the scheduled date</li>\r\n                        <li>After completion, you can leave a review</li>\r\n                    </ol>\r\n                </div>\r\n                \r\n                <p>You can view and manage your booking anytime by logging into your account.</p>\r\n                \r\n                <hr style=\'border: none; border-top: 1px solid #ddd; margin: 30px 0;\'>\r\n                \r\n                <p style=\'font-size: 0.9em; color: #666;\'>\r\n                    If you have any questions, please contact us at support@cleancare.com\r\n                </p>\r\n                \r\n                <p style=\'font-size: 0.9em; color: #666;\'>\r\n                    Best regards,<br>\r\n                    <strong>The CleanCare Team</strong>\r\n                </p>\r\n            </div>\r\n        </body>\r\n        </html>\r\n        ', '2025-11-09 14:34:24'),
+(4, 'joelmbuyi700@gmail.com', 'Booking Confirmation - CleanCare', '\r\n        <html>\r\n        <body style=\'font-family: Arial, sans-serif; line-height: 1.6; color: #333;\'>\r\n            <div style=\'max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;\'>\r\n                <div style=\'text-align: center; margin-bottom: 30px;\'>\r\n                    <h1 style=\'color: #2c5aa0;\'>CleanCare</h1>\r\n                </div>\r\n                \r\n                <h2 style=\'color: #2c5aa0;\'>Booking Confirmation</h2>\r\n                \r\n                <p>Dear <strong>Joel Mbuyi</strong>,</p>\r\n                \r\n                <p>Thank you for choosing CleanCare! Your booking has been <strong>confirmed</strong>.</p>\r\n                \r\n                <div style=\'background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;\'>\r\n                    <h3 style=\'margin-top: 0; color: #2c5aa0;\'>Booking Details</h3>\r\n                    <table style=\'width: 100%;\'>\r\n                        <tr>\r\n                            <td style=\'padding: 8px 0;\'><strong>Booking ID:</strong></td>\r\n                            <td style=\'padding: 8px 0;\'>#24</td>\r\n                        </tr>\r\n                        <tr>\r\n                            <td style=\'padding: 8px 0;\'><strong>Service:</strong></td>\r\n                            <td style=\'padding: 8px 0;\'>Deep Cleaning</td>\r\n                        </tr>\r\n                        <tr>\r\n                            <td style=\'padding: 8px 0;\'><strong>Date & Time:</strong></td>\r\n                            <td style=\'padding: 8px 0;\'>Thursday, November 20, 2025 at 12:30 PM</td>\r\n                        </tr>\r\n                        <tr>\r\n                            <td style=\'padding: 8px 0;\'><strong>Location:</strong></td>\r\n                            <td style=\'padding: 8px 0;\'>13 education street</td>\r\n                        </tr>\r\n                        <tr>\r\n                            <td style=\'padding: 8px 0;\'><strong>Price:</strong></td>\r\n                            <td style=\'padding: 8px 0; font-size: 1.2em; color: #2c5aa0;\'><strong>R1,200.00</strong></td>\r\n                        </tr>\r\n                    </table>\r\n                </div>\r\n                \r\n                <div style=\'background: #e7f3ff; padding: 15px; border-radius: 8px; margin: 20px 0;\'>\r\n                    <p style=\'margin: 0;\'><strong>📋 What\'s Next?</strong></p>\r\n                    <ol style=\'margin: 10px 0 0 0; padding-left: 20px;\'>\r\n                        <li>We\'ll assign a cleaner to your booking</li>\r\n                        <li>You\'ll receive updates via email and in-app notifications</li>\r\n                        <li>Our cleaner will arrive on the scheduled date</li>\r\n                        <li>After completion, you can leave a review</li>\r\n                    </ol>\r\n                </div>\r\n                \r\n                <p>You can view and manage your booking anytime by logging into your account.</p>\r\n                \r\n                <hr style=\'border: none; border-top: 1px solid #ddd; margin: 30px 0;\'>\r\n                \r\n                <p style=\'font-size: 0.9em; color: #666;\'>\r\n                    If you have any questions, please contact us at support@cleancare.com\r\n                </p>\r\n                \r\n                <p style=\'font-size: 0.9em; color: #666;\'>\r\n                    Best regards,<br>\r\n                    <strong>The CleanCare Team</strong>\r\n                </p>\r\n            </div>\r\n        </body>\r\n        </html>\r\n        ', '2025-11-09 14:34:26');
 
 -- --------------------------------------------------------
 
@@ -208,7 +206,6 @@ INSERT INTO `email_logs` (`id`, `recipient_email`, `subject`, `message`, `sent_a
 CREATE TABLE `employees` (
   `id` int(11) NOT NULL,
   `name` varchar(100) NOT NULL,
-  `emp_number` varchar(50) DEFAULT NULL,
   `email` varchar(100) DEFAULT NULL,
   `phone` varchar(20) DEFAULT NULL,
   `position` varchar(50) DEFAULT NULL
@@ -218,13 +215,28 @@ CREATE TABLE `employees` (
 -- Dumping data for table `employees`
 --
 
-INSERT INTO `employees` (`id`, `name`, `emp_number`, `email`, `phone`, `position`) VALUES
-(3, 'Joel', 'EMP3', 'client@example.com', '0649077015', NULL),
-(4, 'MARIA', 'EMP4', NULL, NULL, NULL),
-(8, 'Sarah Johnson', 'EMP0002', 'sarah@cleancare.com', '0721234567', NULL),
-(9, 'Linda Brown', 'EMP0004', 'linda@cleancare.com', '0741234567', NULL),
-(13, 'Jemima Mbwembwe', 'EMP0014', 'jemimambwembwe@gmail.com', '084 57 41 272', NULL),
-(14, 'Mary Williams', 'EMP0016', 'mary@cleancare.com', '084 57 41 272', NULL);
+INSERT INTO `employees` (`id`, `name`, `email`, `phone`, `position`) VALUES
+(3, 'Joel', 'client@example.com', '0649077015', NULL),
+(9, 'Linda Brown', 'linda@cleancare.com', '0741234567', NULL),
+(13, 'Jemima Mbwembwe', 'jemimambwembwe@gmail.com', '084 57 41 272', NULL),
+(14, 'Mary Williams', 'mary@cleancare.com', '084 57 41 272', NULL);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `employee_payments`
+--
+
+CREATE TABLE `employee_payments` (
+  `id` int(11) NOT NULL,
+  `employee_id` int(11) NOT NULL,
+  `employee_name` varchar(255) NOT NULL,
+  `employee_email` varchar(255) NOT NULL,
+  `amount` decimal(10,2) NOT NULL,
+  `pay_date` date NOT NULL,
+  `date` datetime DEFAULT current_timestamp(),
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -270,9 +282,10 @@ INSERT INTO `inventory` (`id`, `item_name`, `quantity`, `price`, `last_purchased
 (5, 'Apron', 16, NULL, NULL),
 (6, 'Gloves', 30, NULL, NULL),
 (7, 'Detergents', 12, NULL, NULL),
-(8, 'Mop', 0, NULL, NULL),
-(9, 'Brush', 0, NULL, NULL),
-(10, 'Spray Bottle', 0, NULL, NULL);
+(8, 'Mop', 2, NULL, NULL),
+(9, 'Brush', 10, NULL, NULL),
+(10, 'Spray Bottle', 10, NULL, NULL),
+(11, 'brush', 10, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -394,7 +407,51 @@ CREATE TABLE `notifications` (
 INSERT INTO `notifications` (`id`, `user_role`, `user_id`, `message`, `created_at`, `is_read`) VALUES
 (1, 'admin', 1, 'Booking #15 cancelled by customer. Reason: I made a wrong order. Thanks', '2025-11-08 19:57:23', 1),
 (2, 'admin', 1, 'New booking #21 from Joel Mbuyi - Carpet Cleaning on Nov 15, 2025', '2025-11-09 11:15:14', 1),
-(3, 'admin', 1, 'New booking #22 from Joel Mbuyi - Carpet Cleaning on Nov 15, 2025', '2025-11-09 13:17:27', 0);
+(3, 'admin', 1, 'New booking #22 from Joel Mbuyi - Carpet Cleaning on Nov 15, 2025', '2025-11-09 13:17:27', 1),
+(4, 'admin', 1, 'New booking #23 from Joel Mbuyi - Deep Cleaning on Nov 20, 2025', '2025-11-09 14:34:24', 1),
+(5, 'admin', 1, 'New booking #24 from Joel Mbuyi - Deep Cleaning on Nov 20, 2025', '2025-11-09 14:34:26', 1),
+(6, 'admin', 1, '🚫 Booking #23 cancelled by Joel Mbuyi\nService: Deep Cleaning\nDate: Nov 20, 2025\nReason: thanks', '2025-11-09 14:58:31', 1),
+(7, 'admin', 1, 'New booking #25 from Joel Mbuyi - Regular Cleaning on Nov 20, 2025', '2025-11-09 20:03:45', 1),
+(8, 'cleaner', 13, 'You have been assigned to booking #25', '2025-11-09 20:06:11', 0),
+(9, 'admin', 1, '⏳ Booking #25 marked complete by Jemima Mbwembwe. Please review and confirm.', '2025-11-09 23:25:02', 1),
+(10, 'customer', 10, '✅ Your booking #25 has been completed by the cleaner. Awaiting final confirmation.', '2025-11-09 23:25:02', 0),
+(11, 'admin', 1, '⏳ Booking #25 marked complete by Jemima Mbwembwe. Please review and confirm.', '2025-11-09 23:25:19', 1),
+(12, 'customer', 10, '✅ Your booking #25 has been completed by the cleaner. Awaiting final confirmation.', '2025-11-09 23:25:19', 0),
+(13, 'admin', 1, '⏳ Booking #25 marked complete by Jemima Mbwembwe. Please review and confirm.', '2025-11-10 08:02:34', 1),
+(14, 'customer', 10, '✅ Your booking #25 has been completed by the cleaner. Awaiting final confirmation.', '2025-11-10 08:02:34', 0),
+(15, 'customer', 10, '🎉 Your booking #25 is now complete! Please leave a review.', '2025-11-10 08:03:30', 0),
+(16, 'cleaner', 13, '🎉 Booking #25 has been confirmed as complete!', '2025-11-10 08:03:30', 0),
+(17, 'cleaner', 13, 'New review! ⭐⭐⭐⭐ for booking #25', '2025-11-10 08:05:06', 0),
+(18, 'admin', 1, 'New booking #26 from Joel Mbuyi - Deep Cleaning on Nov 20, 2025', '2025-11-10 10:34:56', 1),
+(19, 'cleaner', 13, '🎯 You have been assigned to booking #26', '2025-11-10 10:38:41', 0),
+(20, 'admin', 1, '⏳ Booking #26 marked complete by Jemima Mbwembwe. Please review and confirm.', '2025-11-10 10:40:07', 1),
+(21, 'customer', 10, '✅ Your booking #26 has been completed by the cleaner. Awaiting final confirmation.', '2025-11-10 10:40:07', 0),
+(22, 'customer', 10, '🎉 Your booking #26 is now complete! Please leave a review.', '2025-11-10 10:41:43', 0),
+(23, 'cleaner', 13, '🎉 Booking #26 has been confirmed as complete!', '2025-11-10 10:41:43', 0),
+(24, 'admin', 1, 'New booking #28 from Joel Mbuyi - Office Cleaning on Dec 10, 2025', '2025-11-10 10:59:21', 1),
+(25, 'cleaner', 8, '🎯 You have been assigned to booking #27', '2025-11-10 11:00:00', 0);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `password_resets`
+--
+
+CREATE TABLE `password_resets` (
+  `id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `token` varchar(64) NOT NULL,
+  `expires_at` datetime NOT NULL,
+  `used` tinyint(1) DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `password_resets`
+--
+
+INSERT INTO `password_resets` (`id`, `user_id`, `token`, `expires_at`, `used`, `created_at`) VALUES
+(1, 6, 'f1d7a5144c92ae47c4807290fd76876afa29fbff024fe53d080ef2887449effd', '2025-11-10 10:40:03', 0, '2025-11-10 08:40:03');
 
 -- --------------------------------------------------------
 
@@ -430,7 +487,9 @@ CREATE TABLE `purchase_history` (
 
 INSERT INTO `purchase_history` (`id`, `inventory_id`, `quantity`, `needed_by`, `purchased_at`) VALUES
 (1, 4, 20, '2025-11-25', '2025-11-02 20:50:59'),
-(2, 7, 12, '2025-11-19', '2025-11-02 20:59:48');
+(2, 7, 12, '2025-11-19', '2025-11-02 20:59:48'),
+(3, 8, 2, '2025-11-20', '2025-11-09 16:09:02'),
+(4, 10, 10, '2025-11-20', '2025-11-09 16:10:33');
 
 -- --------------------------------------------------------
 
@@ -447,6 +506,13 @@ CREATE TABLE `reviews` (
   `comment` text DEFAULT NULL,
   `created_at` datetime DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `reviews`
+--
+
+INSERT INTO `reviews` (`id`, `booking_id`, `customer_id`, `cleaner_id`, `rating`, `comment`, `created_at`) VALUES
+(1, 25, 10, 13, 4, 'thanks for the experince', '2025-11-10 10:05:06');
 
 -- --------------------------------------------------------
 
@@ -470,7 +536,7 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`id`, `email`, `phone`, `address`, `password`, `role`, `name`, `created_at`) VALUES
-(1, 'admin@cleancare.com', '0211234567', 'Cape Town, South Africa', '$2y$10$ImsD8PQ3QgRhYbVLHTd6.OAkOoaGqxSYmd7UZh7dTGQOXPxU2nV5S', 'admin', 'System Admin', '2025-10-30 09:47:04'),
+(1, 'admin@cleancare.com', '0211234567', 'Cape Town, South Africa', '$2y$10$5uKjNF1jQZtPnK3vL0zxRuVLtYmXob5655YHH6EAs5LslHt3ulWyy', 'admin', 'System Admin', '2025-10-30 09:47:04'),
 (2, 'sarah@cleancare.com', '0721234567', 'Rondebosch, Cape Town', '$2y$10$UYuWkGjNynHMhe6BjZEIJON2vmfE8Q8MRM0xHVRVoQjilvWZybqqu', 'cleaner', 'Sarah Johnson', '2025-10-30 09:47:04'),
 (4, 'linda@cleancare.com', '0741234567', 'Wynberg, Cape Town', '$2y$10$UYuWkGjNynHMhe6BjZEIJON2vmfE8Q8MRM0xHVRVoQjilvWZybqqu', 'cleaner', 'Linda Brown', '2025-10-30 09:47:04'),
 (5, 'john@example.com', '0761234567', '123 Main St, Cape Town', '$2y$10$jlk4FrysR42v3l4aCmpx2eR32hvMBoC0aT0wTsy/6BMc177z0Yh6q', 'customer', 'John Doe', '2025-10-30 09:47:04'),
@@ -541,6 +607,13 @@ ALTER TABLE `employees`
   ADD PRIMARY KEY (`id`);
 
 --
+-- Indexes for table `employee_payments`
+--
+ALTER TABLE `employee_payments`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `employee_id` (`employee_id`);
+
+--
 -- Indexes for table `expenses`
 --
 ALTER TABLE `expenses`
@@ -565,6 +638,14 @@ ALTER TABLE `inventory_log`
 --
 ALTER TABLE `notifications`
   ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `password_resets`
+--
+ALTER TABLE `password_resets`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `user_id` (`user_id`),
+  ADD KEY `idx_token` (`token`);
 
 --
 -- Indexes for table `payslips`
@@ -615,7 +696,7 @@ ALTER TABLE `admin`
 -- AUTO_INCREMENT for table `bookings`
 --
 ALTER TABLE `bookings`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=29;
 
 --
 -- AUTO_INCREMENT for table `cancellation_fees`
@@ -639,13 +720,19 @@ ALTER TABLE `customers`
 -- AUTO_INCREMENT for table `email_logs`
 --
 ALTER TABLE `email_logs`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT for table `employees`
 --
 ALTER TABLE `employees`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
+
+--
+-- AUTO_INCREMENT for table `employee_payments`
+--
+ALTER TABLE `employee_payments`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `expenses`
@@ -657,7 +744,7 @@ ALTER TABLE `expenses`
 -- AUTO_INCREMENT for table `inventory`
 --
 ALTER TABLE `inventory`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
 
 --
 -- AUTO_INCREMENT for table `inventory_log`
@@ -669,7 +756,13 @@ ALTER TABLE `inventory_log`
 -- AUTO_INCREMENT for table `notifications`
 --
 ALTER TABLE `notifications`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=26;
+
+--
+-- AUTO_INCREMENT for table `password_resets`
+--
+ALTER TABLE `password_resets`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `payslips`
@@ -681,13 +774,13 @@ ALTER TABLE `payslips`
 -- AUTO_INCREMENT for table `purchase_history`
 --
 ALTER TABLE `purchase_history`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT for table `reviews`
 --
 ALTER TABLE `reviews`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `users`
@@ -707,6 +800,12 @@ ALTER TABLE `bookings`
   ADD CONSTRAINT `bookings_ibfk_2` FOREIGN KEY (`cleaner_id`) REFERENCES `employees` (`id`);
 
 --
+-- Constraints for table `employee_payments`
+--
+ALTER TABLE `employee_payments`
+  ADD CONSTRAINT `employee_payments_ibfk_1` FOREIGN KEY (`employee_id`) REFERENCES `employees` (`id`) ON DELETE CASCADE;
+
+--
 -- Constraints for table `expenses`
 --
 ALTER TABLE `expenses`
@@ -717,6 +816,12 @@ ALTER TABLE `expenses`
 --
 ALTER TABLE `inventory_log`
   ADD CONSTRAINT `inventory_log_ibfk_1` FOREIGN KEY (`inventory_id`) REFERENCES `inventory` (`id`);
+
+--
+-- Constraints for table `password_resets`
+--
+ALTER TABLE `password_resets`
+  ADD CONSTRAINT `password_resets_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `payslips`
