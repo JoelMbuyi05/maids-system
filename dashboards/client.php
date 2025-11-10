@@ -9,7 +9,7 @@ if ($user_role !== 'customer') {
     exit;
 }
 
-// CRITICAL FIX: Get customer_id FIRST before using it
+// Get customer_id FIRST before using it
 try {
     $stmt = $pdo->prepare("SELECT id FROM customers WHERE email = :email");
     $stmt->execute([':email' => $user_email]);
@@ -28,7 +28,37 @@ try {
     die("Error setting up customer account. Please contact support.");
 }
 
-// NOW fetch notifications (after $customer_id is set)
+// Handle DELETE action
+if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])) {
+    $booking_id = intval($_GET['id']);
+    
+    try {
+        // Verify booking belongs to customer and is completed
+        $stmt = $pdo->prepare("SELECT status FROM bookings WHERE id = :id AND customer_id = :customer_id");
+        $stmt->execute([':id' => $booking_id, ':customer_id' => $customer_id]);
+        $booking = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if ($booking && $booking['status'] === 'completed') {
+            // Delete the booking
+            $stmt = $pdo->prepare("DELETE FROM bookings WHERE id = :id AND customer_id = :customer_id");
+            $stmt->execute([':id' => $booking_id, ':customer_id' => $customer_id]);
+            
+            $_SESSION['flash_message'] = "Booking deleted successfully.";
+            $_SESSION['flash_type'] = "success";
+        } else {
+            $_SESSION['flash_message'] = "Only completed bookings can be deleted.";
+            $_SESSION['flash_type'] = "error";
+        }
+    } catch (PDOException $e) {
+        $_SESSION['flash_message'] = "Error deleting booking: " . $e->getMessage();
+        $_SESSION['flash_type'] = "error";
+    }
+    
+    header('Location: ../dashboards/client.php');
+    exit;
+}
+
+// Fetch notifications
 try {
     $stmt = $pdo->prepare("SELECT * FROM notifications 
                           WHERE user_role = 'customer' 
@@ -42,7 +72,7 @@ try {
     $customer_notifications = [];
 }
 
-// Fetch user's bookings using customer_id from customers table
+// Fetch user's bookings
 try {
     $stmt = $pdo->prepare("SELECT b.*, e.name as cleaner_name, e.phone as cleaner_phone
                            FROM bookings b 
@@ -78,6 +108,37 @@ try {
     <link rel="stylesheet" href="../frontend/css/style.css">
     <link rel="stylesheet" href="../frontend/css/dashboard.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .btn-view {
+            background: #2c5aa0;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 0.85rem;
+            display: inline-block;
+            border: none;
+            cursor: pointer;
+        }
+        .btn-delete {
+            background: #dc3545;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        .btn-view:hover { background: #1a3d7a; }
+        .btn-delete:hover { background: #c82333; }
+    </style>
 </head>
 <body>
     <!-- Navigation -->
@@ -231,11 +292,19 @@ try {
                                         </span>
                                     </td>
                                     <td style="padding: 12px; font-weight: 600;">R<?= number_format($booking['price'], 2) ?></td>
-                                    <td style="padding: 12px; text-align: center;">
-                                        <a href="../pages/booking_details.php?id=<?= $booking['id'] ?>" 
-                                           style="background: #2c5aa0; color: white; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 0.85rem;">
-                                            View
-                                        </a>
+                                    <td style="padding: 12px;">
+                                        <div class="action-buttons">
+                                            <a href="../pages/booking_details.php?id=<?= $booking['id'] ?>" class="btn-view">
+                                                View
+                                            </a>
+                                            <?php if ($status === 'completed'): ?>
+                                                <a href="?action=delete&id=<?= $booking['id'] ?>" 
+                                                   class="btn-delete"
+                                                   onclick="return confirm('⚠️ Are you sure you want to delete this completed booking?\n\nBooking #<?= $booking['id'] ?>\nService: <?= htmlspecialchars($booking['service_id']) ?>\n\nThis action cannot be undone!')">
+                                                    Delete
+                                                </a>
+                                            <?php endif; ?>
+                                        </div>
                                     </td>
                                 </tr>
                                 <?php endforeach; ?>

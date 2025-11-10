@@ -29,27 +29,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // ADMIN: Assign cleaner
         if ($action === 'assign_cleaner' && $user_role === 'admin') {
             $cleaner_id = intval($_POST['cleaner_id']);
-            $stmt = $pdo->prepare("UPDATE bookings SET cleaner_id = :cleaner_id, status = 'confirmed' WHERE id = :id");
+            $stmt = $pdo->prepare("UPDATE bookings SET cleaner_id = :cleaner_id, status = 'assigned' WHERE id = :id");
             $stmt->execute([':cleaner_id' => $cleaner_id, ':id' => $booking_id]);
             
-            // Get cleaner info
+            // Get cleaner info and booking details
             $stmt = $pdo->prepare("SELECT name, email FROM employees WHERE id = :id");
             $stmt->execute([':id' => $cleaner_id]);
             $cleaner = $stmt->fetch(PDO::FETCH_ASSOC);
             
-            // Notify cleaner
-            save_user_notification($cleaner_id, 'cleaner', "You have been assigned to booking #{$booking_id}");
-            
-            // Send email
-            $stmt = $pdo->prepare("SELECT booking_date, service_id FROM bookings WHERE id = :id");
+            $stmt = $pdo->prepare("SELECT service_id, booking_date FROM bookings WHERE id = :id");
             $stmt->execute([':id' => $booking_id]);
             $booking_info = $stmt->fetch(PDO::FETCH_ASSOC);
             
+            // Notify cleaner
+            save_notification($cleaner_id, 'cleaner', "🎯 You have been assigned to booking #{$booking_id}");
+            
+            // Send email notification
             sendCleanerAssignedNotification(
                 $cleaner['email'], 
                 $cleaner['name'], 
-                $booking_info['service_id'],
-                date('d M Y', strtotime($booking_info['booking_date']))
+                $booking_info['service_id'], 
+                $booking_info['booking_date']
             );
             
             $_SESSION['flash_message'] = "Cleaner assigned successfully!";
@@ -61,7 +61,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // CLEANER: Mark as complete
         if ($action === 'mark_complete' && $user_role === 'cleaner') {
             // Get cleaner ID
-            $stmt = $pdo->prepare("SELECT id FROM employees WHERE email = :email");
+            $stmt = $pdo->prepare("SELECT id, name FROM employees WHERE email = :email");
             $stmt->execute([':email' => $_SESSION['user_email']]);
             $employee = $stmt->fetch(PDO::FETCH_ASSOC);
             
@@ -81,20 +81,73 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             
             // Get booking details
-            $stmt = $pdo->prepare("SELECT b.*, e.name as cleaner_name 
+            $stmt = $pdo->prepare("SELECT b.*, e.name as cleaner_name, c.id as customer_id, c.email as customer_email, c.name as customer_name
                                   FROM bookings b 
                                   JOIN employees e ON b.cleaner_id = e.id 
+                                  JOIN customers c ON b.customer_id = c.id
                                   WHERE b.id = :id");
             $stmt->execute([':id' => $booking_id]);
             $booking = $stmt->fetch(PDO::FETCH_ASSOC);
             
-            // Notify admin
-            save_user_notification(1, 'admin', "Booking #{$booking_id} marked complete by {$booking['cleaner_name']}. Please review and confirm.");
+            // Notify admin - user_id 1 for admin
+            $admin_message = "⏳ Booking #{$booking_id} marked complete by {$employee['name']}. Please review and confirm.";
+            save_notification(1, 'admin', $admin_message);
+            
+            // Notify customer
+            $customer_message = "✅ Your booking #{$booking_id} has been completed by the cleaner. Awaiting final confirmation.";
+            save_notification($booking['customer_id'], 'customer', $customer_message);
             
             // Send email to admin
-            sendJobCompletionNotification('admin@cleancare.com', $booking['cleaner_name'], $booking_id);
+            $stmt = $pdo->prepare("SELECT email FROM users WHERE role = 'admin' LIMIT 1");
+            $stmt->execute();
+            $admin = $stmt->fetch(PDO::FETCH_ASSOC);
+            if ($admin && isset($admin['email'])) {
+                sendJobCompletionNotification($admin['email'], $employee['name'], $booking_id);
+            }
             
-            $_SESSION['flash_message'] = "Marked as complete. Waiting for admin confirmation.";
+            $_SESSION['flash_message'] = "✅ Job marked as complete! Waiting for admin confirmation.";
+            $_SESSION['flash_type'] = "success";
+            header("Location: booking_details.php?id=$booking_id");
+            exit;
+        }
+        
+        // CUSTOMER: Mark as complete
+        if ($action === 'customer_mark_complete' && $user_role === 'customer') {
+            // Get customer ID
+            $stmt = $pdo->prepare("SELECT id FROM customers WHERE email = :email");
+            $stmt->execute([':email' => $_SESSION['user_email']]);
+            $customer = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if (!$customer) {
+                throw new Exception("Customer not found");
+            }
+            
+            // Update booking status
+            $stmt = $pdo->prepare("UPDATE bookings SET 
+                                  status = 'completed_by_customer',
+                                  completed_by_customer_at = NOW()
+                                  WHERE id = :id AND customer_id = :customer_id 
+                                  AND status IN ('confirmed', 'assigned', 'completed_by_cleaner')");
+            $stmt->execute([':id' => $booking_id, ':customer_id' => $customer['id']]);
+            
+            if ($stmt->rowCount() === 0) {
+                throw new Exception("Booking not ready for customer completion");
+            }
+            
+            // Get booking details for notification
+            $stmt = $pdo->prepare("SELECT service_id, booking_date, cleaner_id FROM bookings WHERE id = :id");
+            $stmt->execute([':id' => $booking_id]);
+            $booking_info = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            // Notify admin
+            save_notification(1, 'admin', "✅ Customer marked booking #{$booking_id} as complete. Please confirm final completion.");
+            
+            // Notify cleaner if assigned
+            if ($booking_info['cleaner_id']) {
+                save_notification($booking_info['cleaner_id'], 'cleaner', "👍 Customer marked booking #{$booking_id} as complete.");
+            }
+            
+            $_SESSION['flash_message'] = "Thank you! Marked as complete. Waiting for admin final confirmation.";
             $_SESSION['flash_type'] = "success";
             header("Location: booking_details.php?id=$booking_id");
             exit;
@@ -107,7 +160,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                   status = 'completed',
                                   completed = 1,
                                   completed_by_admin_at = NOW()
-                                  WHERE id = :id AND status = 'completed_by_cleaner'");
+                                  WHERE id = :id AND status IN ('completed_by_cleaner', 'completed_by_customer')");
             $stmt->execute([':id' => $booking_id]);
             
             if ($stmt->rowCount() === 0) {
@@ -115,17 +168,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             
             // Get booking details
-            $stmt = $pdo->prepare("SELECT b.*, c.email as customer_email, c.name as customer_name, c.id as customer_id
+            $stmt = $pdo->prepare("SELECT b.*, c.email as customer_email, c.name as customer_name, c.id as customer_id,
+                                  e.name as cleaner_name, e.id as cleaner_id
                                   FROM bookings b 
                                   JOIN customers c ON b.customer_id = c.id 
+                                  LEFT JOIN employees e ON b.cleaner_id = e.id
                                   WHERE b.id = :id");
             $stmt->execute([':id' => $booking_id]);
             $booking = $stmt->fetch(PDO::FETCH_ASSOC);
             
             // Notify customer
-            save_user_notification($booking['customer_id'], 'customer', "Your booking #{$booking_id} is now complete! Please leave a review.");
+            save_notification($booking['customer_id'], 'customer', "🎉 Your booking #{$booking_id} is now complete! Please leave a review.");
             
-            $_SESSION['flash_message'] = "Booking confirmed as complete!";
+            // Notify cleaner
+            if ($booking['cleaner_id']) {
+                save_notification($booking['cleaner_id'], 'cleaner', "🎉 Booking #{$booking_id} has been confirmed as complete!");
+            }
+            
+            // Send completion email to customer
+            $service_name = $service_names[$booking['service_id']] ?? "Service";
+            sendBookingCompletedEmail($booking['customer_email'], $booking['customer_name'], $booking_id);
+            
+            $_SESSION['flash_message'] = "✅ Booking confirmed as complete!";
             $_SESSION['flash_type'] = "success";
             header("Location: booking_details.php?id=$booking_id");
             exit;
@@ -133,15 +197,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         // CUSTOMER: Cancel booking
         if ($action === 'cancel_booking' && $user_role === 'customer') {
-            $reason = sanitize_input($_POST['reason'] ?? 'Customer requested cancellation');
+            $reason = sanitize_input($_POST['reason'] ?? 'No reason provided');
             
-            // Get customer_id
-            $stmt = $pdo->prepare("SELECT id FROM customers WHERE email = :email");
+            // Get customer_id and name
+            $stmt = $pdo->prepare("SELECT c.id, c.name FROM customers c WHERE c.email = :email");
             $stmt->execute([':email' => $_SESSION['user_email']]);
             $customer = $stmt->fetch(PDO::FETCH_ASSOC);
             
             if (!$customer) {
                 throw new Exception("Customer not found");
+            }
+            
+            // Get booking details for notification
+            $stmt = $pdo->prepare("SELECT service_id, booking_date, cleaner_id, status FROM bookings WHERE id = :id AND customer_id = :customer_id");
+            $stmt->execute([':id' => $booking_id, ':customer_id' => $customer['id']]);
+            $booking_info = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if (!$booking_info) {
+                throw new Exception("Booking not found");
+            }
+            
+            // Check if booking can be cancelled
+            if (!in_array($booking_info['status'], ['pending', 'confirmed', 'assigned'])) {
+                throw new Exception("Only pending or confirmed bookings can be cancelled");
             }
             
             // Update booking
@@ -157,11 +235,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ]);
             
             // Notify admin
-            save_user_notification(1, 'admin', "Booking #{$booking_id} cancelled by customer. Reason: {$reason}");
+            $service_name = $service_names[$booking_info['service_id']] ?? "Service";
+            $notification_msg = "🚫 Booking #{$booking_id} cancelled by {$customer['name']}\n";
+            $notification_msg .= "Service: {$service_name}\n";
+            $notification_msg .= "Date: " . date('M j, Y', strtotime($booking_info['booking_date'])) . "\n";
+            $notification_msg .= "Reason: " . ($reason ?: 'No reason provided');
+            
+            save_notification(1, 'admin', $notification_msg);
+            
+            // Notify cleaner if assigned
+            if ($booking_info['cleaner_id']) {
+                save_notification($booking_info['cleaner_id'], 'cleaner', "❌ Booking #{$booking_id} has been cancelled by the customer.");
+            }
             
             $_SESSION['flash_message'] = "Booking cancelled successfully.";
             $_SESSION['flash_type'] = "success";
-            header("Location: booking_details.php?id=$booking_id");
+            header("Location: ../dashboards/client.php");
             exit;
         }
         
@@ -170,18 +259,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $rating = intval($_POST['rating']);
             $comment = sanitize_input($_POST['comment']);
             
+            if ($rating < 1 || $rating > 5) {
+                throw new Exception("Please select a rating");
+            }
+            
             // Get customer_id
             $stmt = $pdo->prepare("SELECT id FROM customers WHERE email = :email");
             $stmt->execute([':email' => $_SESSION['user_email']]);
             $customer = $stmt->fetch(PDO::FETCH_ASSOC);
             
             // Get booking details
-            $stmt = $pdo->prepare("SELECT cleaner_id FROM bookings WHERE id = :id AND customer_id = :customer_id");
+            $stmt = $pdo->prepare("SELECT cleaner_id, status FROM bookings WHERE id = :id AND customer_id = :customer_id");
             $stmt->execute([':id' => $booking_id, ':customer_id' => $customer['id']]);
             $booking = $stmt->fetch(PDO::FETCH_ASSOC);
             
             if (!$booking) {
                 throw new Exception("Booking not found");
+            }
+            
+            if ($booking['status'] !== 'completed') {
+                throw new Exception("Can only review completed bookings");
             }
             
             // Insert review
@@ -197,10 +294,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             // Notify cleaner
             if ($booking['cleaner_id']) {
-                save_user_notification($booking['cleaner_id'], 'cleaner', "You received a {$rating}-star review for booking #{$booking_id}");
+                $stars = str_repeat('⭐', $rating);
+                save_notification($booking['cleaner_id'], 'cleaner', "New review! {$stars} for booking #{$booking_id}");
             }
             
-            $_SESSION['flash_message'] = "Review submitted successfully!";
+            $_SESSION['flash_message'] = "Review submitted successfully! Thank you for your feedback.";
             $_SESSION['flash_type'] = "success";
             header("Location: booking_details.php?id=$booking_id");
             exit;
@@ -253,7 +351,7 @@ try {
         $stmt->execute([':email' => $_SESSION['user_email']]);
         $employee = $stmt->fetch(PDO::FETCH_ASSOC);
         
-        if ($employee['id'] != $booking['cleaner_id']) {
+        if ($employee && $employee['id'] != $booking['cleaner_id']) {
             $_SESSION['flash_message'] = "Unauthorized access.";
             $_SESSION['flash_type'] = "error";
             header('Location: ../dashboards/cleaner.php');
@@ -281,14 +379,36 @@ $status = $booking['status'] ?? ($booking['completed'] ? 'completed' : 'pending'
 $status_colors = [
     'pending' => '#FFC107',
     'confirmed' => '#17a2b8',
+    'assigned' => '#007bff',
     'in_progress' => '#007bff',
     'completed_by_cleaner' => '#6c757d',
+    'completed_by_customer' => '#17a2b8',
     'completed' => '#28a745',
     'cancelled' => '#dc3545'
 ];
 $status_color = $status_colors[$status] ?? '#FFC107';
 
+$status_labels = [
+    'pending' => 'Pending',
+    'confirmed' => 'Confirmed',
+    'assigned' => 'Assigned',
+    'in_progress' => 'In Progress',
+    'completed_by_cleaner' => 'Awaiting Admin Review',
+    'completed_by_customer' => 'Customer Approved - Awaiting Final Review',
+    'completed' => 'Completed',
+    'cancelled' => 'Cancelled'
+];
+$status_label = $status_labels[$status] ?? 'Pending';
+
 $service_name = $service_names[$booking['service_id']] ?? htmlspecialchars($booking['service_id']);
+
+// Determine which dashboard to go back to
+$back_url = match($user_role) {
+    'admin' => '../dashboards/admin.php',
+    'cleaner' => '../dashboards/cleaner.php',
+    'customer' => '../dashboards/client.php',
+    default => '../index.php'
+};
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -308,6 +428,7 @@ $service_name = $service_names[$booking['service_id']] ?? htmlspecialchars($book
         .btn-assign { background: #17a2b8; color: #fff; }
         .btn-complete { background: #28a745; color: #fff; }
         .btn-cancel { background: #dc3545; color: #fff; }
+        .btn-back { background: #6c757d; color: #fff; }
         .btn:hover { opacity: 0.85; transform: translateY(-2px); }
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
         .modal-content { background: white; margin: 10% auto; padding: 30px; border-radius: 12px; max-width: 500px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
@@ -321,6 +442,9 @@ $service_name = $service_names[$booking['service_id']] ?? htmlspecialchars($book
         .rating-stars { display: flex; gap: 5px; font-size: 2rem; }
         .rating-stars span { cursor: pointer; color: #ddd; transition: color 0.2s; }
         .rating-stars span:hover, .rating-stars span.active { color: #FFC107; }
+        .cleaner-action-box { background: #d4edda; border: 2px solid #28a745; padding: 25px; border-radius: 12px; margin-top: 30px; text-align: center; }
+        .cleaner-action-box h4 { color: #155724; margin-top: 0; margin-bottom: 15px; font-size: 1.3rem; }
+        .cleaner-action-box p { color: #155724; margin-bottom: 20px; }
         @media (max-width: 768px) { .detail-row { grid-template-columns: 1fr; } }
     </style>
 </head>
@@ -342,7 +466,7 @@ $service_name = $service_names[$booking['service_id']] ?? htmlspecialchars($book
                 </div>
             </div>
             <ul class="nav-menu">
-                <li><a href="../dashboards/<?= $user_role ?>.php">Dashboard</a></li>
+                <li><a href="<?= $back_url ?>">Dashboard</a></li>
             </ul>
             <div class="nav-buttons">
                 <a href="../backend/logout.php" class="btn-primary">Logout</a>
@@ -359,7 +483,7 @@ $service_name = $service_names[$booking['service_id']] ?? htmlspecialchars($book
             <div style="background: white; padding: 40px; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.08);">
                 <div style="text-align: center; margin-bottom: 30px;">
                     <span style="background: <?= $status_color ?>; color: white; padding: 10px 30px; border-radius: 25px; font-size: 1.1rem; font-weight: 600;">
-                        <?= ucwords(str_replace('_', ' ', $status)) ?>
+                        <?= $status_label ?>
                     </span>
                 </div>
 
@@ -426,17 +550,54 @@ $service_name = $service_names[$booking['service_id']] ?? htmlspecialchars($book
 
                 <!-- Actions based on role and status -->
                 
+                <!-- CLEANER ACTIONS - PROMINENT DISPLAY -->
+                <?php if ($user_role === 'cleaner'): ?>
+                    <?php if (in_array($status, ['confirmed', 'assigned', 'pending'])): ?>
+                        <div class="cleaner-action-box">
+                            <h4>✅ Ready to Mark as Complete?</h4>
+                            <p>Once you've finished the job, click the button below to notify the admin and customer.</p>
+                            <form method="POST" style="margin: 0;">
+                                <input type="hidden" name="action" value="mark_complete">
+                                <button type="submit" class="btn btn-complete" style="font-size: 1.1rem; padding: 15px 40px;" onclick="return confirm('Have you completed this job?\n\nClicking OK will:\n✓ Notify the admin for final review\n✓ Notify the customer\n✓ Update the job status')">
+                                    ✓ Mark Job as Complete
+                                </button>
+                            </form>
+                        </div>
+                    <?php elseif ($status === 'completed_by_cleaner'): ?>
+                        <div style="background: #fff3cd; border: 2px solid #ffc107; padding: 25px; border-radius: 12px; margin-top: 30px; text-align: center;">
+                            <h4 style="color: #856404; margin-top: 0;">⏳ Waiting for Admin Confirmation</h4>
+                            <p style="color: #856404; margin: 0;">You've marked this job as complete. The admin will review and confirm shortly.</p>
+                        </div>
+                    <?php elseif ($status === 'completed'): ?>
+                        <div style="background: #d4edda; border: 2px solid #28a745; padding: 25px; border-radius: 12px; margin-top: 30px; text-align: center;">
+                            <h4 style="color: #155724; margin-top: 0;">✅ Job Completed!</h4>
+                            <p style="color: #155724; margin: 0;">This job has been confirmed as complete by the admin.</p>
+                        </div>
+                    <?php endif; ?>
+                <?php endif; ?>
+
                 <!-- CUSTOMER ACTIONS -->
                 <?php if ($user_role === 'customer'): ?>
-                    <?php if ($status === 'pending' || $status === 'confirmed'): ?>
+                    <?php if (in_array($status, ['pending', 'confirmed', 'assigned'])): ?>
                         <div class="action-btns">
                             <button onclick="showCancelModal()" class="btn btn-cancel">Cancel Booking</button>
                         </div>
                     <?php endif; ?>
 
+                    <?php if (in_array($status, ['confirmed', 'assigned', 'completed_by_cleaner'])): ?>
+                        <div class="action-btns">
+                            <form method="POST" style="margin: 0;">
+                                <input type="hidden" name="action" value="customer_mark_complete">
+                                <button type="submit" class="btn btn-complete" onclick="return confirm('Mark this service as complete? This means you are satisfied with the work done.')">
+                                    ✓ Mark as Complete
+                                </button>
+                            </form>
+                        </div>
+                    <?php endif; ?>
+
                     <?php if ($status === 'completed' && !$existing_review): ?>
                         <div class="action-btns">
-                            <button onclick="showReviewModal()" class="btn btn-complete">Leave a Review</button>
+                            <button onclick="showReviewModal()" class="btn btn-complete">⭐ Leave a Review</button>
                         </div>
                     <?php endif; ?>
                     
@@ -448,30 +609,19 @@ $service_name = $service_names[$booking['service_id']] ?? htmlspecialchars($book
                                 <?php for($i = $existing_review['rating']; $i < 5; $i++) echo '☆'; ?>
                             </div>
                             <p style="margin: 0;"><?= htmlspecialchars($existing_review['comment']) ?></p>
+                            <small style="color: #999;">Submitted on <?= date('M j, Y', strtotime($existing_review['created_at'])) ?></small>
                         </div>
                     <?php endif; ?>
                 <?php endif; ?>
 
-                <!-- CLEANER ACTIONS -->
-                <?php if ($user_role === 'cleaner' && ($status === 'confirmed' || $status === 'in_progress')): ?>
-                    <div class="action-btns">
-                        <form method="POST" style="margin: 0;">
-                            <input type="hidden" name="action" value="mark_complete">
-                            <button type="submit" class="btn btn-complete" onclick="return confirm('Mark this booking as complete?')">
-                                ✓ Mark as Complete
-                            </button>
-                        </form>
-                    </div>
-                <?php endif; ?>
-
                 <!-- ADMIN ACTIONS -->
                 <?php if ($user_role === 'admin'): ?>
-                    <?php if ($status !== 'completed' && $status !== 'cancelled'): ?>
+                    <?php if (!in_array($status, ['completed', 'cancelled'])): ?>
                     <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-top: 20px;">
                         <h4 style="color: #2c5aa0; margin-bottom: 15px;">Assign/Change Cleaner</h4>
                         <form method="POST" style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
                             <input type="hidden" name="action" value="assign_cleaner">
-                            <select name="cleaner_id" required style="padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                            <select name="cleaner_id" required style="padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 1rem;">
                                 <option value="">-- Select Cleaner --</option>
                                 <?php foreach ($employees as $emp): ?>
                                     <option value="<?= $emp['id'] ?>" <?= ($booking['cleaner_id'] == $emp['id']) ? 'selected' : '' ?>>
@@ -484,17 +634,32 @@ $service_name = $service_names[$booking['service_id']] ?? htmlspecialchars($book
                     </div>
                     <?php endif; ?>
 
-                    <?php if ($status === 'completed_by_cleaner'): ?>
-                    <div class="action-btns">
+                    <?php if (in_array($status, ['completed_by_cleaner', 'completed_by_customer'])): ?>
+                    <div style="background: #fff3cd; border: 2px solid #ffc107; padding: 25px; border-radius: 12px; margin-top: 30px; text-align: center;">
+                        <h4 style="color: #856404; margin-top: 0;">⚠️ Pending Your Confirmation</h4>
+                        <p style="color: #856404; margin-bottom: 20px;">
+                            <?php if ($status === 'completed_by_cleaner'): ?>
+                                The cleaner has marked this job as complete. Please review and confirm.
+                            <?php else: ?>
+                                The customer has marked this job as complete. Please confirm final completion.
+                            <?php endif; ?>
+                        </p>
                         <form method="POST" style="margin: 0;">
                             <input type="hidden" name="action" value="confirm_completion">
-                            <button type="submit" class="btn btn-complete" onclick="return confirm('Confirm this booking is complete?')">
+                            <button type="submit" class="btn btn-complete" style="font-size: 1.1rem; padding: 15px 40px;" onclick="return confirm('Confirm this booking is complete? This will:\n✓ Update status to completed\n✓ Notify customer and cleaner\n✓ Allow customer to leave review')">
                                 ✓ Confirm Completion
                             </button>
                         </form>
                     </div>
                     <?php endif; ?>
                 <?php endif; ?>
+                
+                <!-- BACK TO DASHBOARD BUTTON FOR ALL USERS -->
+                <div style="text-align: center; margin-top: 40px; padding-top: 30px; border-top: 2px solid #f0f0f0;">
+                    <a href="<?= $back_url ?>" class="btn btn-back" style="display: inline-block; text-decoration: none;">
+                        ← Back to Dashboard
+                    </a>
+                </div>
             </div>
         </div>
     </section>
@@ -530,11 +695,11 @@ $service_name = $service_names[$booking['service_id']] ?? htmlspecialchars($book
                 <h3>Leave a Review</h3>
                 <span class="close" onclick="closeModal('reviewModal')">&times;</span>
             </div>
-            <form method="POST">
+            <form method="POST" onsubmit="return validateReview()">
                 <input type="hidden" name="action" value="submit_review">
                 <input type="hidden" name="rating" id="ratingInput" value="0">
                 <div class="form-group">
-                    <label>Rating</label>
+                    <label>Rating <span style="color: #dc3545;">*</span></label>
                     <div class="rating-stars" id="ratingStars">
                         <span data-rating="1">★</span>
                         <span data-rating="2">★</span>
@@ -542,10 +707,11 @@ $service_name = $service_names[$booking['service_id']] ?? htmlspecialchars($book
                         <span data-rating="4">★</span>
                         <span data-rating="5">★</span>
                     </div>
+                    <small style="color: #999;">Click on stars to rate</small>
                 </div>
                 <div class="form-group">
-                    <label>Your Review</label>
-                    <textarea name="comment" rows="4" placeholder="Share your experience..." required></textarea>
+                    <label>Your Review <span style="color: #dc3545;">*</span></label>
+                    <textarea name="comment" id="reviewComment" rows="4" placeholder="Share your experience..." required></textarea>
                 </div>
                 <div style="display: flex; gap: 10px; justify-content: flex-end;">
                     <button type="button" onclick="closeModal('reviewModal')" class="btn" style="background: #6c757d; color: white;">Cancel</button>
@@ -583,6 +749,15 @@ $service_name = $service_names[$booking['service_id']] ?? htmlspecialchars($book
                     });
                 };
             });
+        }
+
+        function validateReview() {
+            const rating = document.getElementById('ratingInput').value;
+            if (rating === '0' || rating === '') {
+                alert('Please select a rating by clicking on the stars');
+                return false;
+            }
+            return true;
         }
 
         // Close modal when clicking outside

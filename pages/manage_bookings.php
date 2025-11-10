@@ -83,7 +83,7 @@ if ($filterEmployee != '') {
 }
 if ($filterService != '') {
     $where[] = "b.service = :service";
-    $params[':service'] = $filterService;
+    $params[':service'] = "%$filterService%";
 }
 if ($filterStatus !== '') {
     $statusValue = ($filterStatus === 'completed') ? 1 : (($filterStatus === 'pending') ? 0 : null);
@@ -476,5 +476,20 @@ $bookings = $stmt->fetchAll(PDO::FETCH_ASSOC);
             </div>
         </main>
     </div>
+
+    <script>
+        // Auto-refresh every 30 seconds to show real-time updates
+        setTimeout(function() {
+            location.reload();
+        }, 30000);
+
+        // Show last update time
+        document.addEventListener('DOMContentLoaded', function() {
+            const updateTime = document.createElement('div');
+            updateTime.style.cssText = 'position: fixed; bottom: 10px; right: 10px; background: #2c5aa0; color: white; padding: 8px 15px; border-radius: 20px; font-size: 0.85rem; z-index: 999;';
+            updateTime.textContent = 'Updated: ' + new Date().toLocaleTimeString();
+            document.body.appendChild(updateTime);
+        });
+    </script>
 </body>
 </html>

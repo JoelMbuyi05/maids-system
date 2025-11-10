@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once '../backend/db_config.php';
+require_once '../backend/functions.php';
 
 // Check if logged in
 if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'customer') {
@@ -13,12 +14,21 @@ $user_name = $_SESSION['user_name'];
 $user_email = $_SESSION['user_email'];
 $user_role = $_SESSION['user_role'];
 
-// Get available cleaners (from employees table)
-try {
-    $stmt = $pdo->query("SELECT id, name FROM employees ORDER BY name");
-    $cleaners = $stmt->fetchAll(PDO::FETCH_ASSOC);
-} catch (PDOException $e) {
-    $cleaners = [];
+// Helper function to save notifications
+function save_notification($pdo, $user_id, $user_role, $message) {
+    try {
+        $stmt = $pdo->prepare("INSERT INTO notifications (user_id, user_role, message, is_read) 
+                              VALUES (:user_id, :user_role, :message, 0)");
+        $stmt->execute([
+            ':user_id' => $user_id,
+            ':user_role' => $user_role,
+            ':message' => $message
+        ]);
+        return true;
+    } catch (PDOException $e) {
+        error_log("Notification error: " . $e->getMessage());
+        return false;
+    }
 }
 
 // Handle form submission
@@ -27,7 +37,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $service_type = $_POST['service_type'] ?? '';
         $date = $_POST['date'] ?? '';
         $time = $_POST['time'] ?? '';
-        $cleaner_id = !empty($_POST['cleaner_id']) ? intval($_POST['cleaner_id']) : null;
         $address = $_POST['address'] ?? '';
         $price = floatval($_POST['price'] ?? 0);
 
@@ -54,7 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $customer_id = $pdo->lastInsertId();
         }
 
-        // Map service_type to package string (assuming service_id column stores the package name)
+        // Map service_type to package string
         $service_map = [
             'Regular Cleaning' => 'Regular Cleaning',
             'Deep Cleaning' => 'Deep Cleaning',
@@ -63,35 +72,64 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'Carpet Cleaning' => 'Carpet Cleaning',
             'Window Cleaning' => 'Window Cleaning'
         ];
-        $service = $service_map[$service_type] ?? 'Basic Clean'; // This holds the service name string
+        $service = $service_map[$service_type] ?? 'Basic Clean';
 
         $location = trim(explode(',', $address)[0] ?? $address);
 
         // Insert booking
         $stmt = $pdo->prepare("
             INSERT INTO bookings (customer_id, cleaner_id, service_id, location, price, booking_date, status)
-            VALUES (:customer_id, :cleaner_id, :service_id, :location, :price, :booking_date, 'pending')
-            ");
-        // *** FIX: Changed :package (in SQL) to :service to match the execute array key.
-        // *** FIX: Changed the binding value from $service_id (undefined) to $service (the defined package name).
+            VALUES (:customer_id, NULL, :service_id, :location, :price, :booking_date, 'pending')
+        ");
         $stmt->execute([
             ':customer_id' => $customer_id,
-            ':cleaner_id' => $cleaner_id,
             ':service_id' => $service, 
             ':location' => $location,
             ':price' => $price,
             ':booking_date' => $date . ' ' . $time
         ]);
 
-        $_SESSION['flash_message'] = "Booking created successfully! We'll contact you soon.";
+        // Get booking ID
+        $booking_id = $pdo->lastInsertId();
+        
+        // Format date nicely
+        $formatted_date = date('l, F j, Y', strtotime($date));
+        
+        // Send confirmation email using PHPMailer function
+        try {
+            $email_sent = sendBookingConfirmationEmail(
+                $user_email, 
+                $user_name, 
+                $booking_id, 
+                $service, 
+                $formatted_date, 
+                $location, 
+                $price
+            );
+            
+            if ($email_sent) {
+                error_log("✅ Booking confirmation email sent to: $user_email");
+            } else {
+                error_log("❌ Failed to send booking confirmation email to: $user_email");
+            }
+        } catch (Exception $e) {
+            error_log("Email exception: " . $e->getMessage());
+        }
+        
+        // Notify admin about new booking
+        save_notification($pdo, 1, 'admin', "New booking #{$booking_id} from {$user_name} - {$service} on " . date('M j, Y', strtotime($date)));
+
+        $_SESSION['flash_message'] = "🎉 Booking created successfully! Confirmation email sent to {$user_email}";
         $_SESSION['flash_type'] = "success";
         header('Location: ../dashboards/client.php');
         exit;
 
     } catch (PDOException $e) {
         $error_message = "Database error: " . $e->getMessage();
+        error_log("Booking error: " . $e->getMessage());
     } catch (Exception $e) {
         $error_message = $e->getMessage();
+        error_log("Booking error: " . $e->getMessage());
     }
 }
 ?>
@@ -149,7 +187,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 
                 <?php if (isset($error_message)): ?>
                     <div style="background: #fff3f3; border: 1px solid #ffaaaa; padding: 12px; border-radius: 6px; color: #cc0000; margin-bottom: 20px;">
-                        <?= $error_message ?>
+                        ❌ <?= htmlspecialchars($error_message) ?>
                     </div>
                 <?php endif; ?>
                 
@@ -178,16 +216,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </div>
                     </div>
 
-                   <!-- <div style="margin-bottom: 20px;">
-                        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">Preferred Cleaner (Optional)</label>
-                        <select name="cleaner_id" id="cleaner_id" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
-                            <option value="">-- Any Available Cleaner --</option>
-                            <?php foreach ($cleaners as $cleaner): ?>
-                                <option value="<?= $cleaner['id'] ?>"><?= htmlspecialchars($cleaner['name']) ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>-->
-
                     <div style="margin-bottom: 20px;">
                         <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">Service Address *</label>
                         <textarea name="address" id="address" rows="3" required placeholder="Enter full address where service is needed" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; resize: vertical;"></textarea>
@@ -200,8 +228,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
 
                     <button type="submit" style="width: 100%; padding: 15px; background: #2c5aa0; color: white; border: none; border-radius: 8px; font-size: 1.1rem; font-weight: 600; cursor: pointer; transition: all 0.3s;">
-                        Book Service Now
+                        📧 Book Service Now
                     </button>
+                    <p style="text-align: center; margin-top: 10px; color: #666; font-size: 0.9rem;">
+                        ✉️ You'll receive a confirmation email at <strong><?= htmlspecialchars($user_email) ?></strong>
+                    </p>
                 </form>
             </div>
         </div>

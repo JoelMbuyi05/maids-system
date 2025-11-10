@@ -458,4 +458,79 @@ function check_booking_availability($cleaner_id, $date, $time, $pdo) {
     }
 }
 
+//Save notification to database
+
+function save_notification($user_id, $user_role, $message) {
+    global $pdo;
+    
+    try {
+        // Create notifications table if it doesn't exist
+        $pdo->exec("CREATE TABLE IF NOT EXISTS notifications (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            user_id INT NOT NULL,
+            user_role VARCHAR(50) NOT NULL,
+            message TEXT NOT NULL,
+            is_read TINYINT(1) DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )");
+        
+        $stmt = $pdo->prepare("INSERT INTO notifications (user_id, user_role, message, is_read) 
+                              VALUES (:user_id, :user_role, :message, 0)");
+        $stmt->execute([
+            ':user_id' => $user_id,
+            ':user_role' => $user_role,
+            ':message' => $message
+        ]);
+        return true;
+    } catch (PDOException $e) {
+        error_log("Notification error: " . $e->getMessage());
+        return false;
+    }
+}
+
+/**
+ * Alias for compatibility
+ */
+function save_user_notification($user_id, $user_role, $message) {
+    return save_notification($user_id, $user_role, $message);
+}
+
+/**
+ * Get unread notification count
+ */
+function get_notification_count($user_id, $user_role) {
+    global $pdo;
+    
+    try {
+        $stmt = $pdo->prepare("SELECT COUNT(*) as count FROM notifications 
+                              WHERE user_id = :user_id 
+                              AND user_role = :user_role 
+                              AND is_read = 0");
+        $stmt->execute([
+            ':user_id' => $user_id,
+            ':user_role' => $user_role
+        ]);
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $result['count'];
+    } catch (PDOException $e) {
+        error_log("Get notification count error: " . $e->getMessage());
+        return 0;
+    }
+}
+
+/**
+ * Mark notification as read
+ */
+function mark_notification_read($notification_id) {
+    global $pdo;
+    
+    try {
+        $stmt = $pdo->prepare("UPDATE notifications SET is_read = 1 WHERE id = :id");
+        $stmt->execute([':id' => $notification_id]);
+        return true;
+    } catch (PDOException $e) {
+        error_log("Mark notification read error: " . $e->getMessage());
+        return false;
+    }
+}
 ?>
