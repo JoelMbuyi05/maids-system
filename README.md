@@ -8,17 +8,14 @@ A simple cleaning service management system built with PHP, MySQL, HTML, CSS, an
 - 🔐 Secure registration and login
 - 📅 Book cleaning services with preferred date/time
 - 👀 View booking history and status
-- 💳 Make payments for completed services
 - ⭐ Leave feedback and ratings
 - 👤 Manage personal profile
 
 ### For Cleaners
 - 📋 View assigned jobs and schedules
-- ✅ Accept or decline booking requests
 - 📍 Access customer contact information
 - 💰 Track earnings and completed jobs
 - ✓ Mark jobs as complete
-- 📅 Visual schedule calendar
 
 ### For Administrators
 - 📊 System-wide analytics dashboard
