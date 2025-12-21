@@ -43,3 +43,5 @@ A simple cleaning service management system built with PHP, MySQL, HTML, CSS, an
 - **XAMPP** - Local development environment
 - **phpMyAdmin** - Database management
 - **Git** - Version control
+
+##School Project
