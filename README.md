@@ -44,4 +44,4 @@ A simple cleaning service management system built with PHP, MySQL, HTML, CSS, an
 - **phpMyAdmin** - Database management
 - **Git** - Version control
 
-##School Project
+## School Project
